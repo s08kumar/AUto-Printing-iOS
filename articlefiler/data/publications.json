@@ -1,0 +1,191 @@
+{
+  "//": "Publication registry. Edit freely, or override per-machine in ~/.config/article-filer/publications.json",
+  "publications": [
+    {
+      "acronym": "NYT",
+      "name": "The New York Times",
+      "domains": ["nytimes.com", "nyti.ms", "cooking.nytimes.com", "int.nyt.com"],
+      "title_suffixes": ["The New York Times", "NYTimes.com", "The New York Times Company", "NYT Cooking"]
+    },
+    {
+      "acronym": "WSJ",
+      "name": "The Wall Street Journal",
+      "domains": ["wsj.com", "on.wsj.com", "barrons.com"],
+      "title_suffixes": ["WSJ", "The Wall Street Journal", "Wall Street Journal"]
+    },
+    {
+      "acronym": "FT",
+      "name": "Financial Times",
+      "domains": ["ft.com", "on.ft.com", "ftalphaville.ft.com"],
+      "title_suffixes": ["Financial Times", "FT.com", "FT Alphaville"]
+    },
+    {
+      "acronym": "TE",
+      "name": "The Economist",
+      "domains": ["economist.com", "econ.st"],
+      "title_suffixes": ["The Economist", "Economist Impact"]
+    },
+    {
+      "acronym": "MCK",
+      "name": "McKinsey & Company",
+      "domains": ["mckinsey.com", "mck.co", "mckinseyquarterly.com"],
+      "title_suffixes": ["McKinsey", "McKinsey & Company", "McKinsey Quarterly", "McKinsey Global Institute"]
+    },
+    {
+      "acronym": "HBR",
+      "name": "Harvard Business Review",
+      "domains": ["hbr.org", "s.hbr.org"],
+      "title_suffixes": ["Harvard Business Review", "HBR"]
+    },
+    {
+      "acronym": "BBG",
+      "name": "Bloomberg",
+      "domains": ["bloomberg.com", "bloom.bg", "businessweek.com"],
+      "title_suffixes": ["Bloomberg", "Bloomberg.com", "Bloomberg Businessweek"]
+    },
+    {
+      "acronym": "REU",
+      "name": "Reuters",
+      "domains": ["reuters.com", "reut.rs"],
+      "title_suffixes": ["Reuters"]
+    },
+    {
+      "acronym": "GRD",
+      "name": "The Guardian",
+      "domains": ["theguardian.com", "gu.com"],
+      "title_suffixes": ["The Guardian", "the Guardian"]
+    },
+    {
+      "acronym": "WAPO",
+      "name": "The Washington Post",
+      "domains": ["washingtonpost.com", "wapo.st"],
+      "title_suffixes": ["The Washington Post", "Washington Post"]
+    },
+    {
+      "acronym": "ATL",
+      "name": "The Atlantic",
+      "domains": ["theatlantic.com"],
+      "title_suffixes": ["The Atlantic"]
+    },
+    {
+      "acronym": "NYR",
+      "name": "The New Yorker",
+      "domains": ["newyorker.com"],
+      "title_suffixes": ["The New Yorker"]
+    },
+    {
+      "acronym": "MIT",
+      "name": "MIT Technology Review",
+      "domains": ["technologyreview.com"],
+      "title_suffixes": ["MIT Technology Review"]
+    },
+    {
+      "acronym": "NAT",
+      "name": "Nature",
+      "domains": ["nature.com", "go.nature.com"],
+      "title_suffixes": ["Nature", "Nature Energy", "Nature Climate Change"]
+    },
+    {
+      "acronym": "SCI",
+      "name": "Science",
+      "domains": ["science.org", "sciencemag.org"],
+      "title_suffixes": ["Science", "Science | AAAS"]
+    },
+    {
+      "acronym": "IEA",
+      "name": "International Energy Agency",
+      "domains": ["iea.org"],
+      "title_suffixes": ["IEA", "International Energy Agency", "Analysis - IEA"]
+    },
+    {
+      "acronym": "IRENA",
+      "name": "International Renewable Energy Agency",
+      "domains": ["irena.org"],
+      "title_suffixes": ["IRENA"]
+    },
+    {
+      "acronym": "WEF",
+      "name": "World Economic Forum",
+      "domains": ["weforum.org"],
+      "title_suffixes": ["World Economic Forum", "The World Economic Forum"]
+    },
+    {
+      "acronym": "BCG",
+      "name": "Boston Consulting Group",
+      "domains": ["bcg.com", "on.bcg.com"],
+      "title_suffixes": ["BCG", "Boston Consulting Group"]
+    },
+    {
+      "acronym": "BAIN",
+      "name": "Bain & Company",
+      "domains": ["bain.com"],
+      "title_suffixes": ["Bain", "Bain & Company"]
+    },
+    {
+      "acronym": "TH",
+      "name": "The Hindu",
+      "domains": ["thehindu.com", "thehindubusinessline.com"],
+      "title_suffixes": ["The Hindu", "The Hindu BusinessLine", "BusinessLine"]
+    },
+    {
+      "acronym": "IE",
+      "name": "The Indian Express",
+      "domains": ["indianexpress.com", "financialexpress.com"],
+      "title_suffixes": ["The Indian Express", "Indian Express", "The Financial Express"]
+    },
+    {
+      "acronym": "MINT",
+      "name": "Mint",
+      "domains": ["livemint.com"],
+      "title_suffixes": ["Mint", "Livemint"]
+    },
+    {
+      "acronym": "BS",
+      "name": "Business Standard",
+      "domains": ["business-standard.com"],
+      "title_suffixes": ["Business Standard"]
+    },
+    {
+      "acronym": "ET",
+      "name": "The Economic Times",
+      "domains": ["economictimes.indiatimes.com", "economictimes.com"],
+      "title_suffixes": ["The Economic Times", "Economic Times", "ETEnergyWorld"]
+    },
+    {
+      "acronym": "TOI",
+      "name": "The Times of India",
+      "domains": ["timesofindia.indiatimes.com", "toi.in"],
+      "title_suffixes": ["Times of India", "The Times of India"]
+    },
+    {
+      "acronym": "HT",
+      "name": "Hindustan Times",
+      "domains": ["hindustantimes.com"],
+      "title_suffixes": ["Hindustan Times"]
+    },
+    {
+      "acronym": "DTE",
+      "name": "Down To Earth",
+      "domains": ["downtoearth.org.in"],
+      "title_suffixes": ["Down To Earth", "DownToEarth"]
+    },
+    {
+      "acronym": "CW",
+      "name": "Carbon Brief",
+      "domains": ["carbonbrief.org"],
+      "title_suffixes": ["Carbon Brief"]
+    },
+    {
+      "acronym": "NIK",
+      "name": "Nikkei Asia",
+      "domains": ["asia.nikkei.com", "nikkei.com"],
+      "title_suffixes": ["Nikkei Asia", "Nikkei"]
+    },
+    {
+      "acronym": "SEM",
+      "name": "MIT Sloan Management Review",
+      "domains": ["sloanreview.mit.edu"],
+      "title_suffixes": ["MIT Sloan Management Review"]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "article-filer"
+version = "1.0.0"
+description = "Name newspaper article PDFs '<ACRONYM> - <Title>.pdf' and file them into an iCloud folder."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []          # standard library only, so /usr/bin/python3 can run it
+
+[project.scripts]
+article-filer = "articlefiler.cli:main"
+
+[tool.setuptools]
+packages = ["articlefiler"]
+
+[tool.setuptools.package-data]
+articlefiler = ["data/*.json"]
