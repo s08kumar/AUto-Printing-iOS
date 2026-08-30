@@ -159,6 +159,14 @@ Everything lives in `~/.config/article-filer/config.json`:
 - After changing `library`, run `make shortcut` again so the Shortcut saves to
   the new place.
 
+## The first run asks permission
+
+macOS and iOS ask, once per site, whether the Shortcut may access the Safari
+item it was handed. Answer **Always Allow**. Until you do, the Shortcut waits
+for you — and a waiting shortcut looks identical to a hung one, so check for
+the dialog (it can open behind the browser window) before concluding anything
+is wrong.
+
 ## The one honest caveat: paywalls
 
 A Shortcut renders the page in its own web view, which is **not** signed in to

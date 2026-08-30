@@ -146,6 +146,24 @@ place:
 make shortcut && ./shortcut/sign.sh 'build/File Article.shortcut'
 ```
 
+## The first run asks permission
+
+The first time the Shortcut runs on a given site, macOS asks:
+
+> Allow "File Article" to access 1 Safari item while loading web content on
+> "www.nytimes.com"?
+
+Click **Always Allow**. Until you answer, the shortcut sits there waiting —
+which looks exactly like a hang, complete with a spinning indicator in the
+menu bar. The dialog can also open behind the Safari window, so if a run seems
+to stall, look for it before assuming anything is broken.
+
+**Always Allow** is per-site, so expect it once for nytimes.com, once for
+wsj.com, and so on. **Allow Once** works but asks again every single time.
+
+The same prompt appears on the iPhone the first time you share from a given
+site.
+
 ## Troubleshooting
 
 **Nothing gets filed.** Almost always Full Disk Access — see the section

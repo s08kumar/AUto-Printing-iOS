@@ -80,6 +80,15 @@ If you never see the prompt and the file never appears, open the Shortcut, tap
 the **Save File** action, and re-pick the folder by hand — that re-establishes
 the permission.
 
+## The first run asks permission
+
+The first time you share from a given site, iOS asks whether the Shortcut may
+access the Safari item. Tap **Always Allow** — it is per-site, and **Allow
+Once** means answering again every time.
+
+Until you answer, the Shortcut waits, which is indistinguishable from it
+having stalled.
+
 ## Using it
 
 **Any article, any app**: Share → **File Article**. A notification confirms the
