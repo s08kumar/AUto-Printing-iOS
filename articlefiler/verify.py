@@ -131,7 +131,12 @@ def inspect(path: Path) -> PdfReport:
     hits = [phrase for phrase in PAYWALL_PHRASES if phrase in lowered]
     if hits:
         report.reasons.append(f"paywall wording: \"{hits[0]}\"")
-    if report.size < SMALL_FILE_BYTES:
+
+    # Plenty of text settles it. A dense, image-free article is legitimately
+    # small — 20 kB carrying 25,000 characters is a whole feature, not a stub —
+    # so size only counts against a file we could not otherwise vouch for.
+    substantial = report.text_chars >= THIN_TEXT_CHARS
+    if report.size < SMALL_FILE_BYTES and not substantial:
         report.reasons.append(f"only {report.size / 1000:.0f} kB")
     if report.text_chars == 0:
         # Unreadable text is not evidence of absent text — many PDFs encode

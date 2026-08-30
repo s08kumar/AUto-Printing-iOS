@@ -520,3 +520,37 @@ class VerifyPrecisionTests(unittest.TestCase):
             report = inspect(path)
         self.assertTrue(report.suspicious)
         self.assertTrue(any("paywall wording" in r for r in report.reasons))
+
+
+class VerifySizeRuleTests(VerifyPrecisionTests):
+    """A dense, image-free article is legitimately small. Size must not
+    convict a file whose text we have already read in quantity."""
+
+    def test_a_small_but_text_rich_article_passes(self):
+        from articlefiler.verify import inspect
+
+        with TemporaryDirectory() as tmp:
+            dense = b" ".join(b"(" + (b"word " * 12) + b") Tj" for _ in range(400))
+            path = self.build(Path(tmp), "dense.pdf", 2, dense)
+            report = inspect(path)
+        self.assertGreater(report.text_chars, 20000)
+        self.assertLess(report.size, 25_000)
+        self.assertFalse(report.suspicious, report.reasons)
+
+    def test_a_small_file_with_no_text_is_still_flagged(self):
+        from articlefiler.verify import inspect
+
+        with TemporaryDirectory() as tmp:
+            report = inspect(self.build(Path(tmp), "empty.pdf", 1, b""))
+        self.assertTrue(report.suspicious)
+        self.assertTrue(any("kB" in r for r in report.reasons))
+
+    def test_paywall_wording_convicts_regardless_of_length(self):
+        from articlefiler.verify import inspect
+
+        with TemporaryDirectory() as tmp:
+            content = (b"(Subscribe to continue reading) Tj "
+                       + b" ".join(b"(" + (b"word " * 12) + b") Tj" for _ in range(400)))
+            report = inspect(self.build(Path(tmp), "long_wall.pdf", 3, content, pad=90000))
+        self.assertTrue(report.suspicious)
+        self.assertTrue(any("paywall wording" in r for r in report.reasons))
