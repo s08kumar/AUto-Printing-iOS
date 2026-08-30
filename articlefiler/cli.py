@@ -233,7 +233,14 @@ def cmd_verify(args) -> int:
     if args.paths:
         reports = [inspect(Path(p).expanduser()) for p in args.paths]
     else:
-        reports = inspect_folder(config.library_path, limit=args.limit)
+        def progress(index: int, total: int, path: Path) -> None:
+            # Overwritten in place, then cleared, so a slow scan never looks
+            # like a hang.
+            print(f"\r  reading {index}/{total}: {path.name[:50]:<50}",
+                  end="", flush=True)
+
+        reports = inspect_folder(config.library_path, limit=args.limit, progress=progress)
+        print("\r" + " " * 72 + "\r", end="")
 
     if not reports:
         print(f"no PDFs found in {config.library_path}")

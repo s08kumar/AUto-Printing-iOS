@@ -426,3 +426,39 @@ class SelfTestTests(FilerTestCase):
             config_path = Path(tmp) / "config.json"
             Config(library=str(Path(tmp) / "nope")).save(config_path)
             self.assertEqual(main(["--config", str(config_path), "selftest"]), 1)
+
+
+class VerifyPerformanceTests(unittest.TestCase):
+    """A library of real articles must not make `verify` look like it hung."""
+
+    def test_a_large_pdf_is_inspected_quickly(self):
+        import os
+        import time
+        import zlib
+
+        from articlefiler.verify import inspect
+
+        with TemporaryDirectory() as tmp:
+            body = b"%PDF-1.7\n" + b"<< /Type /Page >>\n" * 12
+            for _ in range(120):
+                body += b"stream\n" + zlib.compress(os.urandom(40000)) + b"\nendstream\n"
+            path = Path(tmp) / "big.pdf"
+            path.write_bytes(body + b"%%EOF\n")
+            self.assertGreater(path.stat().st_size, 4_000_000)
+
+            started = time.monotonic()
+            report = inspect(path)
+            elapsed = time.monotonic() - started
+
+        self.assertLess(elapsed, 3.0, f"took {elapsed:.1f}s — too slow to feel responsive")
+        self.assertEqual(report.pages, 12)
+
+    def test_icloud_placeholders_are_skipped(self):
+        from articlefiler.verify import inspect_folder
+
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / ".Article.pdf.icloud").write_bytes(b"placeholder")
+            (folder / "Real.pdf").write_bytes(b"%PDF-1.7\n%%EOF\n")
+            names = [r.path.name for r in inspect_folder(folder)]
+        self.assertEqual(names, ["Real.pdf"])

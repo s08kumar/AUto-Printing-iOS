@@ -16,11 +16,17 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .pdfmeta import MAX_SCAN_BYTES, _inflate_streams
+from .pdfmeta import _inflate_streams
+
+# Judging a PDF needs a sample, not the whole thing. These caps keep a
+# 40-file library under a second instead of appearing to hang.
+MAX_READ_BYTES = 2 * 1024 * 1024
+MAX_INFLATED_BYTES = 2 * 1024 * 1024
+MAX_TEXT_SCAN_BYTES = 1024 * 1024
 
 _PAGE_RE = re.compile(rb"/Type\s*/Page[^s]")
-_TEXT_SHOW_RE = re.compile(rb"\(((?:[^()\\]|\\.){0,2000})\)\s*Tj", re.DOTALL)
-_TEXT_ARRAY_RE = re.compile(rb"\[((?:[^\[\]\\]|\\.){0,4000})\]\s*TJ", re.DOTALL)
+_TEXT_SHOW_RE = re.compile(rb"\(([^()]{0,500})\)\s*Tj", re.DOTALL)
+_TEXT_ARRAY_RE = re.compile(rb"\[([^\[\]]{0,1000})\]\s*TJ", re.DOTALL)
 
 # Phrases a paywall interstitial uses and an article almost never does.
 PAYWALL_PHRASES = (
@@ -69,6 +75,7 @@ def count_pages(data: bytes) -> int:
 
 def extract_text(data: bytes, limit: int = 200_000) -> str:
     """Rough text of the content streams, enough to spot a paywall phrase."""
+    data = data[:MAX_TEXT_SCAN_BYTES]
     pieces: list[bytes] = []
     total = 0
     for pattern in (_TEXT_SHOW_RE, _TEXT_ARRAY_RE):
@@ -89,8 +96,9 @@ def inspect(path: Path) -> PdfReport:
     path = Path(path)
     report = PdfReport(path=path)
     try:
-        raw = path.read_bytes()[:MAX_SCAN_BYTES]
         report.size = path.stat().st_size
+        with path.open("rb") as handle:
+            raw = handle.read(MAX_READ_BYTES)
     except OSError:
         report.readable = False
         report.reasons.append("could not be read")
@@ -101,7 +109,7 @@ def inspect(path: Path) -> PdfReport:
         report.reasons.append("not a PDF")
         return report
 
-    body = raw + b"\n" + _inflate_streams(raw)
+    body = raw + b"\n" + _inflate_streams(raw)[:MAX_INFLATED_BYTES]
     report.pages = count_pages(body)
     text = extract_text(body)
     report.text_chars = len(text.strip())
@@ -117,13 +125,26 @@ def inspect(path: Path) -> PdfReport:
     return report
 
 
-def inspect_folder(folder: Path, limit: int = 0) -> list[PdfReport]:
-    """Inspect the PDFs in `folder`, newest first."""
+def inspect_folder(folder: Path, limit: int = 0, progress=None) -> list[PdfReport]:
+    """Inspect the PDFs in `folder`, newest first.
+
+    Placeholders that iCloud has not downloaded are skipped rather than
+    forcing a download that could take minutes.
+    """
     folder = Path(folder)
     if not folder.is_dir():
         return []
-    pdfs = [p for p in folder.rglob("*.pdf") if p.is_file()]
+    pdfs = [
+        p for p in folder.rglob("*.pdf")
+        if p.is_file() and not p.name.startswith(".")
+    ]
     pdfs.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
     if limit:
         pdfs = pdfs[:limit]
-    return [inspect(p) for p in pdfs]
+
+    reports = []
+    for index, path in enumerate(pdfs, 1):
+        if progress is not None:
+            progress(index, len(pdfs), path)
+        reports.append(inspect(path))
+    return reports
