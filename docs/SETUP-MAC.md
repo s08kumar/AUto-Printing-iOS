@@ -132,6 +132,17 @@ in the Shortcuts menu-bar icon, one click from anywhere.
 The keyboard shortcut is the one worth setting up. The others are there for
 when your hands are already on the mouse.
 
+## After updating the code
+
+The launch agent keeps running whatever it imported when it started, so
+`git pull` alone changes nothing about its behaviour:
+
+```bash
+git pull && make restart
+```
+
+Forgetting this is easy to misread as a fix not working.
+
 ## Watching what it does
 
 ```bash

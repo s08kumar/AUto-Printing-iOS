@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: test shortcut sign install uninstall doctor clean
+.PHONY: test shortcut sign install uninstall restart doctor clean
 
 test:
 	$(PYTHON) -m unittest discover -s tests -v
@@ -16,6 +16,12 @@ install:
 
 uninstall:
 	./mac/uninstall.sh
+
+restart:
+	@# git pull updates the files; the running agent keeps the code it
+	@# imported at launch, so it must be restarted to pick changes up.
+	launchctl kickstart -k gui/$$UID/com.articlefiler.watcher
+	@echo "watcher restarted on the current code"
 
 doctor:
 	$(PYTHON) -m articlefiler doctor
