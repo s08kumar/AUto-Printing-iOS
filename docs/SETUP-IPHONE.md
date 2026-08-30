@@ -38,7 +38,40 @@ Worth doing, because otherwise you scroll for it every time.
 3. Find **File Article** and tap the **+** to add it to Favourites.
 4. Drag it to the top.
 
-## 4. Approve the folder, once
+## 4. Bind the Save File destination — required, once per device
+
+This is the step that trips everyone up, so do it before your first real
+article.
+
+A generated shortcut can only carry a *subpath*, not a folder. Which folder
+that subpath hangs off is decided by the device, and left to itself the
+Shortcuts app resolves it against its own **local** storage — so articles land
+in *On My iPhone → Shortcuts →* your folder name, never sync, and appear
+nowhere on the Mac. The Shortcut reports success throughout, because from its
+point of view it succeeded.
+
+To bind it properly:
+
+1. Open **Shortcuts** and tap **File Article** to edit it (not the ⓘ button).
+2. Scroll to the last action, **Save File**.
+3. Tap the folder shown next to *Subpath* / the destination.
+4. In the picker, choose **iCloud Drive** →
+   **NYT-WSJ-Mckinsey-HBR-Economist Articles**.
+5. Leave **Ask Where to Save** off.
+
+Picking through the picker records the actual storage location, which a typed
+subpath cannot. Do the same for **File Article (Simple)**, pointing it at the
+`_Inbox` inside that folder.
+
+### Checking where it really went
+
+After running the Shortcut, open **Files** and look in both roots:
+
+- **iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist Articles** — correct.
+- **On My iPhone → Shortcuts → NYT-WSJ-…** — not bound yet; redo the steps
+  above. Drag the files across while you are there; nothing is lost.
+
+## 5. Approve the folder, once
 
 The first time you run it, iOS asks whether the Shortcut may save into
 *NYT-WSJ-Mckinsey-HBR-Economist Articles*. Tap **Allow**. It will not ask again.
