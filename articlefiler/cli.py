@@ -18,6 +18,7 @@ from .classify import Signals, classify
 from .config import Config, INBOX_NAME, SUBFOLDER_MODES, config_path, user_publications_path
 from .filer import AccessDenied, apply_plan, plan_file, process_inbox
 from .publications import Publication, PublicationRegistry, load_default_registry
+from .verify import inspect, inspect_folder
 from .watch import Watcher, setup_logging
 
 
@@ -99,7 +100,10 @@ def cmd_run(args) -> int:
     config, registry = _load(args)
     plans = process_inbox(config, registry, dry_run=args.dry_run, settle=not args.no_settle)
     if not plans:
-        print(f"nothing to file in {config.inbox_path}")
+        print("nothing to file. Watched folders:")
+        for inbox in config.inbox_paths:
+            state = "" if inbox.is_dir() else "   (does not exist)"
+            print(f"  {inbox}{state}")
         return 0
     for plan in plans:
         print(plan.describe())
@@ -207,6 +211,43 @@ def cmd_locate(args) -> int:
     return 0
 
 
+def cmd_verify(args) -> int:
+    """Report which filed PDFs look like paywall captures rather than articles."""
+    config, _ = _load(args)
+    if args.paths:
+        reports = [inspect(Path(p).expanduser()) for p in args.paths]
+    else:
+        reports = inspect_folder(config.library_path, limit=args.limit)
+
+    if not reports:
+        print(f"no PDFs found in {config.library_path}")
+        return 0
+
+    suspect = [r for r in reports if r.suspicious]
+    width = min(58, max(len(r.path.name) for r in reports))
+    print(f"{'file':<{width}}  {'pages':>5} {'text':>7} {'size':>8}  verdict")
+    print("-" * (width + 34))
+    for report in reports:
+        if args.suspect_only and not report.suspicious:
+            continue
+        name = report.path.name
+        name = name if len(name) <= width else name[: width - 1] + "…"
+        print(
+            f"{name:<{width}}  {report.pages:>5} {report.text_chars:>7} "
+            f"{report.size / 1000:>7.0f}k  {report.verdict}"
+        )
+        for reason in report.reasons:
+            print(f"{'':<{width}}    - {reason}")
+
+    print()
+    print(f"{len(reports)} checked, {len(suspect)} worth a look.")
+    if suspect:
+        print()
+        print("A suspect file is usually the paywall rather than the article.")
+        print("Re-file those from Safari, or from screenshots — see docs/PAYWALLS.md.")
+    return 0
+
+
 def cmd_doctor(args) -> int:
     config, registry = _load(args)
     problems = 0
@@ -302,6 +343,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("config", help="print the effective configuration")
     p.set_defaults(func=cmd_config)
+
+    p = sub.add_parser("verify", help="check filed PDFs for paywall captures")
+    p.add_argument("paths", nargs="*", help="specific files (default: the library)")
+    p.add_argument("--limit", type=int, default=40, help="how many recent files to check")
+    p.add_argument("--suspect-only", action="store_true", help="hide the healthy ones")
+    p.set_defaults(func=cmd_verify)
 
     p = sub.add_parser("locate", help="find documents saved outside the library")
     p.add_argument("--hours", type=float, default=24, help="how far back to look")

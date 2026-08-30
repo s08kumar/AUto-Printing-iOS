@@ -308,3 +308,66 @@ class ShortcutsFolderTests(FilerTestCase):
         (self.inbox / "Markets wobble - WSJ.pdf").write_bytes(b"%PDF-1.7\n")
         plans = process_inbox(self.config, self.registry, settle=False)
         self.assertEqual([p.action for p in plans], ["move"])
+
+
+class VerifyTests(unittest.TestCase):
+    """Telling an article from the paywall that stood in front of it."""
+
+    def setUp(self):
+        self._tmp = TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def write(self, name: str, pages: int, text: list, pad: int = 0) -> Path:
+        import zlib
+
+        body = b"%PDF-1.7\n" + b"<< /Type /Page >>\n" * pages
+        stream = b" ".join(b"(" + t.encode() + b") Tj" for t in text)
+        body += b"stream\n" + zlib.compress(stream) + b"\nendstream\n"
+        body += b"%" + b"x" * pad + b"\n%%EOF\n"
+        path = self.tmp / name
+        path.write_bytes(body)
+        return path
+
+    def test_a_real_article_passes(self):
+        from articlefiler.verify import inspect
+
+        path = self.write("good.pdf", 5, ["A headline"] + ["word " * 60] * 6, pad=60000)
+        report = inspect(path)
+        self.assertFalse(report.suspicious, report.reasons)
+        self.assertEqual(report.pages, 5)
+
+    def test_paywall_wording_is_flagged(self):
+        from articlefiler.verify import inspect
+
+        path = self.write("wall.pdf", 1, ["Subscribe to continue reading"], pad=60000)
+        report = inspect(path)
+        self.assertTrue(report.suspicious)
+        self.assertTrue(any("paywall wording" in r for r in report.reasons))
+
+    def test_a_thin_single_page_is_flagged(self):
+        from articlefiler.verify import inspect
+
+        report = inspect(self.write("thin.pdf", 1, ["Hi"], pad=60000))
+        self.assertTrue(any("almost no text" in r for r in report.reasons))
+
+    def test_the_page_tree_node_is_not_counted_as_a_page(self):
+        from articlefiler.verify import count_pages
+
+        self.assertEqual(count_pages(b"/Type /Pages /Type /Page "), 1)
+
+    def test_a_non_pdf_is_reported_not_raised(self):
+        from articlefiler.verify import inspect
+
+        path = self.tmp / "x.pdf"
+        path.write_bytes(b"not a pdf")
+        report = inspect(path)
+        self.assertFalse(report.readable)
+        self.assertEqual(report.verdict, "unreadable")
+
+    def test_a_missing_file_is_reported_not_raised(self):
+        from articlefiler.verify import inspect
+
+        self.assertFalse(inspect(self.tmp / "nope.pdf").readable)

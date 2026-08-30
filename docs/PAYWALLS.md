@@ -74,9 +74,15 @@ starting point rather than gospel.
 
 ## Telling instantly which one you got
 
-The notification at the end names the file, but not what is inside it. The
-quickest check is the file size: a real article PDF is typically a few hundred
-kilobytes and several pages; a paywall capture is one page and much smaller.
+```bash
+python3 -m articlefiler verify --suspect-only
+```
+
+That reads every filed PDF and flags the ones that look like a wall rather
+than an article — by page count, size, how much text they actually contain,
+and whether that text says things like "subscribe to continue". It is a
+heuristic, not proof, but it turns "open forty PDFs to check" into a list of
+the two worth opening.
 
 If you file a lot from one publication, do the test once. Whatever that paper
 does, it will do consistently, and you will know which route to use without

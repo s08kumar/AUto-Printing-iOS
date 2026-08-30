@@ -165,6 +165,17 @@ than the current hoops:
 `docs/PAYWALLS.md` goes through which publication behaves which way, and how to
 tell within a second or two which route you are on.
 
+## Checking what you filed
+
+```bash
+python3 -m articlefiler verify --suspect-only
+```
+
+Flags filed PDFs that look like a paywall capture rather than the article —
+one page, little text, "subscribe to continue". Worth running occasionally;
+see [`docs/PAYWALLS.md`](docs/PAYWALLS.md) for what to do about the ones it
+finds.
+
 ## Requirements
 
 - iOS 15 or later, macOS 12 Monterey or later.
