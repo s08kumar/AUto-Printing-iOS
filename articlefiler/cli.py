@@ -261,6 +261,9 @@ def cmd_verify(args) -> int:
         )
         for reason in report.reasons:
             print(f"{'':<{width}}    - {reason}")
+        for note in report.notes:
+            if args.suspect_only or report.suspicious:
+                print(f"{'':<{width}}    ({note})")
 
     print()
     print(f"{len(reports)} checked, {len(suspect)} worth a look.")

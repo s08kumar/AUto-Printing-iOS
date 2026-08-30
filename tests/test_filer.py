@@ -462,3 +462,61 @@ class VerifyPerformanceTests(unittest.TestCase):
             (folder / "Real.pdf").write_bytes(b"%PDF-1.7\n%%EOF\n")
             names = [r.path.name for r in inspect_folder(folder)]
         self.assertEqual(names, ["Real.pdf"])
+
+
+class VerifyPrecisionTests(unittest.TestCase):
+    """A false accusation costs more than a missed one here: the user re-files
+    an article that was fine. Unreadable text is not evidence of absent text."""
+
+    def build(self, folder: Path, name: str, pages: int, content: bytes, pad: int = 0) -> Path:
+        import zlib
+
+        body = b"%PDF-1.7\n" + b"<< /Type /Page >>\n" * pages
+        body += b"stream\n" + zlib.compress(content) + b"\nendstream\n"
+        path = folder / name
+        path.write_bytes(body + b"x" * pad + b"\n%%EOF\n")
+        return path
+
+    def hex_text(self, sentence: str, repeat: int = 40) -> bytes:
+        words = [w.encode().hex().encode() for w in sentence.split()]
+        return b" ".join(b"<" + w + b"> Tj" for w in words) * repeat
+
+    def test_hex_encoded_text_is_extracted(self):
+        from articlefiler.verify import inspect
+
+        with TemporaryDirectory() as tmp:
+            path = self.build(Path(tmp), "hex.pdf", 3,
+                              self.hex_text("A real article with body text"), pad=60000)
+            report = inspect(path)
+        self.assertGreater(report.text_chars, 500, "hex strings should yield text")
+        self.assertFalse(report.suspicious, report.reasons)
+
+    def test_a_one_page_article_with_real_text_is_not_flagged(self):
+        from articlefiler.verify import inspect
+
+        with TemporaryDirectory() as tmp:
+            path = self.build(Path(tmp), "one.pdf", 1,
+                              self.hex_text("A real single page article"), pad=60000)
+            report = inspect(path)
+        self.assertFalse(report.suspicious, report.reasons)
+
+    def test_unreadable_text_is_noted_not_held_against_the_file(self):
+        from articlefiler.verify import inspect
+
+        with TemporaryDirectory() as tmp:
+            import os
+
+            path = self.build(Path(tmp), "opaque.pdf", 7, os.urandom(5000), pad=900000)
+            report = inspect(path)
+        self.assertEqual(report.text_chars, 0)
+        self.assertFalse(report.suspicious, report.reasons)
+        self.assertTrue(any("could not read the text" in n for n in report.notes))
+
+    def test_a_real_paywall_is_still_caught(self):
+        from articlefiler.verify import inspect
+
+        with TemporaryDirectory() as tmp:
+            path = self.build(Path(tmp), "wall.pdf", 1, b"(Subscribe to continue reading) Tj")
+            report = inspect(path)
+        self.assertTrue(report.suspicious)
+        self.assertTrue(any("paywall wording" in r for r in report.reasons))

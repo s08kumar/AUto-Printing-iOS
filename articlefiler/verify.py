@@ -27,6 +27,7 @@ MAX_TEXT_SCAN_BYTES = 1024 * 1024
 _PAGE_RE = re.compile(rb"/Type\s*/Page[^s]")
 _TEXT_SHOW_RE = re.compile(rb"\(([^()]{0,500})\)\s*Tj", re.DOTALL)
 _TEXT_ARRAY_RE = re.compile(rb"\[([^\[\]]{0,1000})\]\s*TJ", re.DOTALL)
+_TEXT_HEX_RE = re.compile(rb"<([0-9A-Fa-f\s]{4,2000})>\s*Tj", re.DOTALL)
 
 # Phrases a paywall interstitial uses and an article almost never does.
 PAYWALL_PHRASES = (
@@ -55,6 +56,7 @@ class PdfReport:
     pages: int = 0
     text_chars: int = 0
     reasons: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
     readable: bool = True
 
     @property
@@ -85,6 +87,17 @@ def extract_text(data: bytes, limit: int = 200_000) -> str:
             total += len(chunk)
             if total >= limit:
                 break
+    for match in _TEXT_HEX_RE.finditer(data):
+        digits = re.sub(rb"[^0-9A-Fa-f]", b"", match.group(1))
+        if len(digits) % 2:
+            digits = digits[:-1]
+        try:
+            pieces.append(bytes.fromhex(digits.decode("ascii")))
+        except ValueError:
+            continue
+        total += len(digits) // 2
+        if total >= limit:
+            break
     raw = b" ".join(pieces)
     raw = re.sub(rb"\\[0-7]{1,3}", b" ", raw)
     raw = re.sub(rb"\\(.)", rb"\1", raw)
@@ -120,7 +133,12 @@ def inspect(path: Path) -> PdfReport:
         report.reasons.append(f"paywall wording: \"{hits[0]}\"")
     if report.size < SMALL_FILE_BYTES:
         report.reasons.append(f"only {report.size / 1000:.0f} kB")
-    if report.pages == 1 and report.text_chars < THIN_TEXT_CHARS:
+    if report.text_chars == 0:
+        # Unreadable text is not evidence of absent text — many PDFs encode
+        # glyphs in ways this deliberately simple extractor cannot follow. Say
+        # so, and judge on size and page count alone.
+        report.notes.append("could not read the text; judged on size and pages only")
+    elif report.pages == 1 and report.text_chars < THIN_TEXT_CHARS:
         report.reasons.append("one page with almost no text")
     return report
 
