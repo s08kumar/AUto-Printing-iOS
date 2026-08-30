@@ -25,10 +25,24 @@ echo "==> Creating folders and config"
 
 echo "==> Installing the launch agent"
 mkdir -p "$AGENT_DIR"
-sed -e "s|__PYTHON__|$PYTHON|g" \
-    -e "s|__REPO__|$REPO|g" \
-    -e "s|__LOG__|$LOG|g" \
-    "$REPO/mac/com.articlefiler.watcher.plist.template" > "$AGENT"
+# Substituted in Python, not sed: '&' and '|' are literal there, so a path
+# like /Users/me/R&D/... cannot corrupt the plist.
+TEMPLATE="$REPO/mac/com.articlefiler.watcher.plist.template" \
+AGENT_OUT="$AGENT" PY_BIN="$PYTHON" REPO_DIR="$REPO" LOG_FILE="$LOG" \
+"$PYTHON" - <<'PYEOF'
+import os
+from pathlib import Path
+from xml.sax.saxutils import escape
+
+text = Path(os.environ["TEMPLATE"]).read_text(encoding="utf-8")
+for token, value in (
+    ("__PYTHON__", os.environ["PY_BIN"]),
+    ("__REPO__", os.environ["REPO_DIR"]),
+    ("__LOG__", os.environ["LOG_FILE"]),
+):
+    text = text.replace(token, escape(value))  # these land inside XML elements
+Path(os.environ["AGENT_OUT"]).write_text(text, encoding="utf-8")
+PYEOF
 
 # bootout is noisy the first time round; an existing agent must go before a reload.
 launchctl bootout "gui/$UID/$LABEL" 2>/dev/null || true

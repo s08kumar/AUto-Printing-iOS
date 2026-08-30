@@ -7,8 +7,6 @@ test:
 
 shortcut:
 	$(PYTHON) shortcut/build_shortcut.py --out build
-	@echo
-	@echo "Now sign it on a Mac:  ./shortcut/sign.sh 'build/File Article.shortcut'"
 
 install:
 	./mac/install.sh
