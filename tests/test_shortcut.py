@@ -18,6 +18,7 @@ from shortcut.build_shortcut import (  # noqa: E402
     TOKEN,
     build_actions,
     build_shortcut,
+    build_simple_shortcut,
     publisher_name_map,
     root_domain_map,
     title_publisher_pattern,
@@ -72,7 +73,7 @@ class ShortcutStructureTests(unittest.TestCase):
             tail,
             [
                 "is.workflow.actions.makepdf",
-                "is.workflow.actions.setname",
+                "is.workflow.actions.setitemname",
                 "is.workflow.actions.documentpicker.save",
                 "is.workflow.actions.notification",
             ],
@@ -181,6 +182,62 @@ class LookupTableTests(unittest.TestCase):
 
         pattern = re.compile(title_suffix_pattern(self.registry))
         self.assertEqual(pattern.sub("", "A headline - with a dash"), "A headline - with a dash")
+
+
+class ActionIdentifierTests(unittest.TestCase):
+    """Shortcuts refuses to run a shortcut containing an unknown action, with
+    only "an action could not be found" to go on — so the identifiers are
+    worth asserting explicitly rather than assuming."""
+
+    KNOWN = {
+        "is.workflow.actions.detect.link",
+        "is.workflow.actions.dictionary",
+        "is.workflow.actions.documentpicker.save",
+        "is.workflow.actions.getitemfromlist",
+        "is.workflow.actions.getitemname",
+        "is.workflow.actions.gettext",
+        "is.workflow.actions.getvalueforkey",
+        "is.workflow.actions.makepdf",
+        "is.workflow.actions.notification",
+        "is.workflow.actions.setitemname",
+        "is.workflow.actions.setvariable",
+        "is.workflow.actions.text.replace",
+    }
+
+    def test_only_known_identifiers_are_used(self):
+        used = {a["WFWorkflowActionIdentifier"]
+                for a in build_actions(PublicationRegistry.bundled(), "/Articles")}
+        self.assertEqual(used - self.KNOWN, set(), "unverified action identifier")
+
+    def test_get_and_set_name_are_the_matching_pair(self):
+        # "setname" does not exist; Set Name pairs with Get Name as setitemname.
+        used = {a["WFWorkflowActionIdentifier"]
+                for a in build_actions(PublicationRegistry.bundled(), "/Articles")}
+        self.assertIn("is.workflow.actions.getitemname", used)
+        self.assertIn("is.workflow.actions.setitemname", used)
+        self.assertNotIn("is.workflow.actions.setname", used)
+
+
+class SimpleVariantTests(unittest.TestCase):
+    def setUp(self):
+        self.workflow = build_simple_shortcut("/Articles/_Inbox")
+
+    def test_it_is_three_actions(self):
+        self.assertEqual(len(self.workflow["WFWorkflowActions"]), 3)
+
+    def test_it_uses_only_the_most_stable_actions(self):
+        used = [a["WFWorkflowActionIdentifier"] for a in self.workflow["WFWorkflowActions"]]
+        self.assertEqual(used, ["is.workflow.actions.makepdf",
+                                "is.workflow.actions.documentpicker.save",
+                                "is.workflow.actions.notification"])
+
+    def test_it_saves_into_the_inbox_for_the_watcher_to_rename(self):
+        save = self.workflow["WFWorkflowActions"][1]["WFWorkflowActionParameters"]
+        self.assertEqual(save["WFFileDestinationPath"], "/Articles/_Inbox")
+        self.assertFalse(save["WFAskWhereToSave"])
+
+    def test_it_is_still_a_share_sheet_action(self):
+        self.assertEqual(self.workflow["WFWorkflowTypes"], ["ActionExtension"])
 
 
 class ActionListTests(unittest.TestCase):

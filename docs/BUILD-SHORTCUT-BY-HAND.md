@@ -142,6 +142,22 @@ Those last two matter: if the paper was not recognised you get
 **Ask Where to Save must be off.** It is the difference between one tap and the
 folder-picking you are trying to escape.
 
+## If it says "an action could not be found"
+
+Shortcuts refuses to run a shortcut containing an action it cannot resolve,
+and the message does not say which one. Build the fallback instead — it is
+three actions, all of them long-standing ones:
+
+| Action | Setting |
+|---|---|
+| **Make PDF** | Input: **Shortcut Input** |
+| **Save File** | Destination: the `_Inbox` folder; **Ask Where to Save**: off |
+| **Show Notification** | Anything you like |
+
+That files every article into the inbox under whatever name iOS gives it, and
+the Mac watcher does the naming. `make shortcut` generates this variant as
+*File Article (Simple)* alongside the full one.
+
 ## Testing it
 
 Share an article and watch what lands. The two things that usually need a nudge:

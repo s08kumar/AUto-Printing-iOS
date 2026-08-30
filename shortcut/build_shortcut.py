@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from articlefiler.config import Config  # noqa: E402
+from articlefiler.config import INBOX_NAME, Config  # noqa: E402
 from articlefiler.publications import PublicationRegistry  # noqa: E402
 
 # The placeholder character Shortcuts uses to anchor a variable inside a string.
@@ -145,8 +145,9 @@ def make_pdf(source: dict) -> dict:
 
 
 def set_name(name: dict) -> dict:
+    """Rename the file. Pairs with Get Name, hence `setitemname`."""
     return action(
-        "is.workflow.actions.setname",
+        "is.workflow.actions.setitemname",
         WFName=token_string(name),
         WFDontIncludeFileExtension=True,
     )
@@ -334,6 +335,44 @@ def build_shortcut(registry: PublicationRegistry, destination: str) -> dict:
     return workflow
 
 
+def build_simple_shortcut(destination: str) -> dict:
+    """A three-action fallback: render, save, confirm.
+
+    No lookups and no renaming — the file lands in the inbox under whatever
+    name iOS gives it, and the Mac watcher does the identifying. Worth having
+    because every action here is one of the oldest and most stable in
+    Shortcuts, so it survives an OS version that chokes on something fancier.
+    """
+    return {
+        "WFWorkflowClientVersion": "2607.0.3",
+        "WFWorkflowMinimumClientVersion": 900,
+        "WFWorkflowMinimumClientVersionString": "900",
+        "WFWorkflowHasShortcutInputVariables": True,
+        "WFWorkflowIcon": {
+            "WFWorkflowIconStartColor": 946986751,
+            "WFWorkflowIconGlyphNumber": 59511,
+        },
+        "WFWorkflowImportQuestions": [],
+        "WFWorkflowTypes": ["ActionExtension"],
+        "WFQuickActionSurfaces": ["Services", "Finder"],
+        "WFWorkflowInputContentItemClasses": [
+            "WFArticleContentItem",
+            "WFImageContentItem",
+            "WFPDFContentItem",
+            "WFRichTextContentItem",
+            "WFSafariWebPageContentItem",
+            "WFStringContentItem",
+            "WFURLContentItem",
+            "WFWebPageContentItem",
+        ],
+        "WFWorkflowActions": [
+            make_pdf(shortcut_input()),
+            save_file(destination),
+            notify("Saved to the inbox — the Mac will name it."),
+        ],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", default="build", help="output directory")
@@ -355,8 +394,13 @@ def main(argv: list[str] | None = None) -> int:
     readable = out_dir / f"{args.name}.plist"
     readable.write_bytes(plistlib.dumps(workflow, fmt=plistlib.FMT_XML))
 
+    simple = build_simple_shortcut(destination + "/" + INBOX_NAME)
+    simple_target = out_dir / f"{args.name} (Simple).shortcut"
+    simple_target.write_bytes(plistlib.dumps(simple, fmt=plistlib.FMT_BINARY))
+
     print(f"wrote {target}  ({len(workflow['WFWorkflowActions'])} actions)")
     print(f"wrote {readable}  (readable copy)")
+    print(f"wrote {simple_target}  ({len(simple['WFWorkflowActions'])} actions, fallback)")
     print(f"save destination: {destination}")
     print(f"publications:     {len(registry)}")
     print()

@@ -16,12 +16,31 @@ if ! command -v shortcuts >/dev/null 2>&1; then
   exit 2
 fi
 
-INPUT="${1:-build/File Article.shortcut}"
+INPUT="${1:-build}"
+
+# A directory signs every shortcut in it, so the fallback variant is not left
+# behind on the one occasion you actually need it.
+if [[ -d "$INPUT" ]]; then
+  found=0
+  for f in "$INPUT"/*.shortcut; do
+    [[ -e "$f" ]] || continue
+    [[ "$f" == *.signed.shortcut ]] && continue
+    found=1
+    "$0" "$f" || exit $?
+    echo
+  done
+  if (( ! found )); then
+    echo "sign.sh: no .shortcut files in $INPUT — run: make shortcut" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
 OUTPUT="${2:-${INPUT%.shortcut}.signed.shortcut}"
 
 if [[ ! -f "$INPUT" ]]; then
   echo "sign.sh: no such file: $INPUT" >&2
-  echo "Generate it first:  python3 shortcut/build_shortcut.py" >&2
+  echo "Generate it first:  make shortcut" >&2
   exit 1
 fi
 
