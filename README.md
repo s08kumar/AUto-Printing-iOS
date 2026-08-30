@@ -187,7 +187,20 @@ than the current hoops:
 `docs/PAYWALLS.md` goes through which publication behaves which way, and how to
 tell within a second or two which route you are on.
 
-## Reaching it in one keystroke
+## On the Mac: two keystrokes, no Shortcuts
+
+Shortcuts' Make PDF action can stall indefinitely rendering a heavy news page.
+Safari's own **Export as PDF** cannot — the page is already rendered, and
+signed in to your subscription. Give it a hotkey:
+
+```bash
+./mac/safari-pdf-hotkey.sh      # Cmd-Shift-P
+```
+
+Then: **⌘⇧P**, **Return** (the dialog remembers `_Inbox`), and the watcher
+files it as `NYT - Headline.pdf`. Every part of that path is proven.
+
+## Reaching a Shortcut in one keystroke
 
 A Shortcut is not in Safari's Share menu until you enable it as a share
 extension, and digging it out of the Shortcuts app each time is no better than

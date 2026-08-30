@@ -76,7 +76,36 @@ menu and in the Services menu of any app.
 Safari on the Mac is the best route of all: you are signed in to your
 subscriptions, so what gets rendered is the real article.
 
-## Reaching it quickly
+## Filing an article: use Safari's own export
+
+Shortcuts' **Make PDF** action renders a live page in its own web view, and on
+a heavy news site — ads, lazy-loaded images, infinite scroll — it can stall
+indefinitely. A stalled shortcut shows a spinner in the menu bar and never
+finishes.
+
+Safari's **File → Export as PDF…** has no such problem: the page is already
+rendered and signed in to your subscription. It is what produced every article
+filed so far.
+
+Make it a keystroke:
+
+```bash
+./mac/safari-pdf-hotkey.sh          # Cmd-Shift-P, then restart Safari
+```
+
+Or by hand: System Settings → Keyboard → **Keyboard Shortcuts** → **App
+Shortcuts** → **+**, Application **Safari**, Menu Title `Export as PDF…`
+(the ellipsis is one character — copy it), and pick a key.
+
+Then filing an article is:
+
+1. **⌘⇧P**
+2. **Return** — the save dialog remembers `_Inbox` from last time
+
+The watcher renames it to `NYT - Headline.pdf` and files it within seconds.
+Two keystrokes, and every part of it is proven.
+
+## Reaching a Shortcut quickly
 
 A Shortcut is not in Safari's Share menu by default, and hunting for it in the
 Shortcuts app every time defeats the purpose. In rough order of how little
