@@ -249,3 +249,30 @@ class PermissionTests(FilerTestCase):
         self.assertFalse(is_protected(Path("/tmp/Articles")))
         message = access_error_message(Path("/tmp/x"), "permission denied listing: /tmp/x")
         self.assertNotIn("Full Disk Access", message)
+
+
+class LoggingTests(unittest.TestCase):
+    def test_no_console_handler_when_output_is_redirected(self):
+        """launchd points stdout at the same file the FileHandler writes, so a
+        stream handler would double every line."""
+        import logging
+        from unittest.mock import patch
+
+        from articlefiler.watch import setup_logging
+
+        with TemporaryDirectory() as tmp:
+            config = Config(library=str(Path(tmp) / "L"), log_path=str(Path(tmp) / "x.log"))
+            with patch("sys.stderr") as stderr:
+                stderr.isatty.return_value = False
+                setup_logging(config)
+                streams = [h for h in logging.getLogger().handlers
+                           if type(h) is logging.StreamHandler]
+                self.assertEqual(streams, [])
+
+            with patch("sys.stderr") as stderr:
+                stderr.isatty.return_value = True
+                setup_logging(config)
+                streams = [h for h in logging.getLogger().handlers
+                           if type(h) is logging.StreamHandler]
+                self.assertEqual(len(streams), 1, "interactive runs should still echo")
+        logging.getLogger().handlers.clear()

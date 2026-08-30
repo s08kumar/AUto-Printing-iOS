@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import signal
+import sys
 import time
 from pathlib import Path
 
@@ -24,7 +25,11 @@ def setup_logging(config: Config, verbose: bool = False) -> None:
     log_file = config.log_file
     log_file.parent.mkdir(parents=True, exist_ok=True)
     handlers: list[logging.Handler] = [logging.FileHandler(log_file, encoding="utf-8")]
-    handlers.append(logging.StreamHandler())
+    # Under launchd, stdout and stderr are already redirected into this same
+    # file, so adding a stream handler would write every line twice. Only echo
+    # to the console when there actually is one.
+    if sys.stderr.isatty():
+        handlers.append(logging.StreamHandler())
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s  %(levelname)-7s %(message)s",
