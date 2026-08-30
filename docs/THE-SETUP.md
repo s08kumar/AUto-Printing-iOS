@@ -1,108 +1,69 @@
 # The setup
 
-What actually works, after establishing the hard way what does not. Two
-devices, two routes, one folder.
+Two devices, one route, one folder. This is what works, established by
+testing rather than reasoning.
 
-The single rule everything follows: **the filename must be set when the PDF is
-made, from the page title.** A PDF of a news page cannot be identified
+**The rule everything follows:** the filename must be set when the PDF is
+made, from the page title. A PDF of a news page cannot be identified
 afterwards — it links to a dozen other articles and nothing inside marks which
-one it is. Every failed approach was an attempt to work that out later.
+one it is. Every failed approach here was an attempt to work that out later.
 
-## Mac: Safari's own export
+Safari sets the filename from the page title. That is the whole solution.
 
-Safari names its export after the page title, renders the page you are already
-looking at, and is signed in to your subscriptions.
+## Mac
 
 ```bash
-./mac/safari-pdf-hotkey.sh      # binds Cmd-Shift-P
+./mac/safari-pdf-hotkey.sh      # binds Cmd-Shift-P to Export as PDF
 ```
 
-Then, on any article: **⌘⇧P**, **Return** (the dialog remembers `_Inbox`).
+On any article: **⌘⇧P**, then **Return** — the save dialog remembers `_Inbox`.
 
-Do not use a Shortcut here. Its Make PDF action re-renders the page in a
-sandboxed web view and can stall indefinitely on a heavy news site.
-
-## iPhone, the reliable route: Safari's own export
-
-iOS has the equivalent of the Mac's Export as PDF, and it is worth preferring
-for the same reason:
+## iPhone
 
 > Share → **Options ›** (under the page title) → **PDF** → **Save to Files** →
 > `_Inbox`
 
-Safari hands over the page it has already rendered, named after its title, so
-there is no Make PDF to stall and no name to reconstruct. A few more taps than
-a Shortcut, and it cannot fail the way a generated capture can.
+Three taps more than a Shortcut, and it works.
 
-## iPhone, the one-tap route: a three-action Shortcut
+## Both
 
-Fewer taps, but it depends on Make PDF, which stalls on heavy pages — that is
-what defeated it on the Mac. Worth trying; fall back to the route above if it
-misbehaves.
+Safari renders the page you are already looking at, signed in to your
+subscriptions, and names the file after its title. The watcher then renames it
+to your convention and moves it into the library within seconds:
 
-Build it on the Mac (easier to see what you are doing) and let iCloud sync it
-across.
-
-| # | Action | Setting |
-|---|---|---|
-| 1 | **Make PDF** | Input: **Shortcut Input** |
-| 2 | **Set Name** | Name: **Shortcut Input → Name**. Don't Include File Extension: on |
-| 3 | **Save File** | Destination: `_Inbox`, picked **through the picker**. Ask Where To Save: off. Subpath: empty |
-
-Then **ⓘ → Show in Share Sheet**, with URLs, Safari web pages, Images, PDFs
-and Text all ticked.
-
-### The two settings that decide whether this works
-
-**Action 2 has two slots, and they are easy to swap.** It reads *Set name **of
-X** to **Y***: `X` is the file being renamed, `Y` is the new name. It must be:
-
-> Set name **of `PDF`** to **`Shortcut Input → Name`**
-
-- **of** must be the **PDF** — the Make PDF output. Set it to Shortcut Input
-  and you rename the web page item instead, and the PDF keeps its UUID.
-- **to** must be the **Shortcut Input's Name** property — the page title. The
-  chip reads `Name` whether it refers to the Shortcut Input or to the PDF, and
-  the PDF's name is the UUID Make PDF just assigned, so binding it there sets
-  the name to itself.
-
-**Action 3's destination.** It arrives set to `Shortcuts` with a separate
-*Subpath* field below. Subpath is a path *inside* the destination, not a place
-to type where the file should go. Pick the folder through the picker; leave
-Subpath empty.
-
-### Verifying it, before trusting it
-
-```bash
-python3 -m articlefiler explain
 ```
-
-Shows the most recent files and what the filer makes of them. A UUID filename
-means action 2 is bound to the wrong variable. Nothing appearing at all means
-action 3 is pointing somewhere else.
-
-## Either way, the Mac finishes the job
-
-Both routes drop a titled PDF into `_Inbox`. The watcher renames it to your
-convention — `NYT - Search Continues for 2,400 Missing in Nepal Floods.pdf` —
-and moves it into the library within seconds.
+NYT - Search Continues for 2,400 Missing in Nepal Floods Amid 'Immense' Devastation.pdf
+```
 
 ```bash
 python3 -m articlefiler run --no-settle   # file anything waiting, now
 python3 -m articlefiler verify            # articles, or paywall captures?
+python3 -m articlefiler explain           # why a file was named what it was
 make restart                              # after any git pull
 ```
 
+## Why not a Shortcut
+
+It would save two taps on the phone. It could not be made to produce a
+correctly named file, over many attempts:
+
+- **Make PDF** re-renders the page in a sandboxed web view. On a heavy news
+  page it stalls indefinitely — a spinner in the menu bar and no error.
+- It names its output with a **UUID**, and supplying a real name needs a
+  **Set Name** action whose variable chip reads `Name` whether it refers to the
+  Shortcut Input (the page title, wanted) or to the PDF (the UUID it just
+  assigned). The two are indistinguishable in the editor, and every attempt
+  resolved to the PDF.
+
+The instructions remain in [QUICK-START-BY-HAND.md](QUICK-START-BY-HAND.md)
+for anyone who wants to try, but Safari's export is the route to use.
+
 ## Paywalls
 
-A Shortcut's web view is not signed in. Sharing a bare link from the NYT app
-can therefore capture the wall rather than the article. Two ways round, both
-still one tap:
+A Shortcut's web view is not signed in; Safari is. This is a further reason to
+prefer it — sharing a bare link from a news app can capture the paywall rather
+than the article. For anything Safari cannot reach, screenshot the article in
+the app and share the images into `_Inbox`; that is paywall-proof.
 
-- Read it in **Safari** first (your subscription includes web access) and share
-  from there.
-- **Screenshot** the article in the app and share the images — Make PDF turns
-  them into a PDF without rendering anything, so it is paywall-proof and
-  cannot stall.
-
-`verify` tells you which you got.
+`python3 -m articlefiler verify` flags captures that look like walls rather
+than articles.

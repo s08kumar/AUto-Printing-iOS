@@ -30,8 +30,13 @@ in that Share sheet. A Shortcut can do everything the print route was for:
 render the article to PDF, work out which paper it came from, build the
 filename, and write it into a fixed iCloud folder without asking you anything.
 
-So the flow becomes: **Share → File Article → done.** Two taps, about a second,
-and the file is already named correctly and already in the right folder.
+In practice the Shortcut route could not be made to name files correctly, and
+Safari's own **Export as PDF** does it perfectly — it names the file after the
+page title, which is the one thing that cannot be recovered afterwards. So the
+flow is **⌘⇧P → Return** on the Mac, and **Share → Options → PDF** on the
+iPhone, with the Mac tool doing the naming and filing.
+
+See [`docs/THE-SETUP.md`](docs/THE-SETUP.md).
 
 ## What is in this repository
 
