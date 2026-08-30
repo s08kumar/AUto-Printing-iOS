@@ -18,7 +18,9 @@ from shortcut.build_shortcut import (  # noqa: E402
     TOKEN,
     build_actions,
     build_shortcut,
+    publisher_name_map,
     root_domain_map,
+    title_publisher_pattern,
     title_suffix_pattern,
     token_string,
 )
@@ -108,7 +110,9 @@ class ShortcutStructureTests(unittest.TestCase):
     def test_the_domain_lookup_table_is_populated(self):
         dictionaries = [a for a in self.actions
                         if a["WFWorkflowActionIdentifier"].endswith(".dictionary")]
-        self.assertEqual(len(dictionaries), 2, "exact-host and root-domain tables")
+        self.assertEqual(
+            len(dictionaries), 3, "exact-host, root-domain and publisher-name tables"
+        )
         for act in dictionaries:
             items = act["WFWorkflowActionParameters"]["WFItems"]["Value"][
                 "WFDictionaryFieldValueItems"
@@ -127,6 +131,38 @@ class ShortcutStructureTests(unittest.TestCase):
 class LookupTableTests(unittest.TestCase):
     def setUp(self):
         self.registry = PublicationRegistry.bundled()
+
+    def test_publisher_names_map_to_acronyms(self):
+        mapping = publisher_name_map(self.registry)
+        self.assertEqual(mapping["Financial Times"], "FT")
+        self.assertEqual(mapping["The Economist"], "TE")
+
+    def test_the_publisher_pattern_captures_the_paper_from_a_headline(self):
+        import re
+
+        pattern = re.compile(title_publisher_pattern(self.registry), re.IGNORECASE)
+        self.assertEqual(
+            pattern.sub(r"\1", "The heat pump decade | Financial Times"), "Financial Times"
+        )
+
+    def test_the_publisher_pattern_leaves_an_unsigned_headline_alone(self):
+        import re
+
+        pattern = re.compile(title_publisher_pattern(self.registry), re.IGNORECASE)
+        headline = "A headline with no publisher"
+        # Unchanged, so it simply misses in the dictionary lookup.
+        self.assertEqual(pattern.sub(r"\1", headline), headline)
+
+    def test_a_publication_name_with_regex_metacharacters_is_escaped(self):
+        import re
+
+        from articlefiler.publications import Publication
+
+        registry = PublicationRegistry.bundled()
+        registry.add(Publication("WCH", "Which?", ("which.co.uk",), ("Which? (C++ Report)",)))
+        pattern = re.compile(title_suffix_pattern(registry), re.IGNORECASE)
+        self.assertEqual(pattern.sub("", "Best heat pumps - Which? (C++ Report)"),
+                         "Best heat pumps")
 
     def test_root_domains_are_reduced_to_two_labels(self):
         mapping = root_domain_map(self.registry)

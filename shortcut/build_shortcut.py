@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import plistlib
+import re
 import sys
 from pathlib import Path
 
@@ -173,14 +174,46 @@ def notify(*parts) -> dict:
 
 # Publication names that sites append to their own headlines. Kept as one
 # regex so the whole clean-up is a single action.
+def _escape(text: str) -> str:
+    """Escape a publication name for use inside a regex alternation.
+
+    `re.escape` rather than hand-rolled replacements: a name like "Which?" or
+    "C++ Report" would otherwise turn its punctuation into quantifiers, which
+    silently stops the suffix matching (and ICU, which drives Shortcuts'
+    regular expressions, may reject it outright). Spaces are un-escaped again
+    because `\ ` is noise in the pattern the user has to read.
+    """
+    return re.escape(text).replace("\\ ", " ")
+
+
+def _suffix_alternatives(registry: PublicationRegistry) -> str:
+    """Every publication name, longest first so the specific ones win."""
+    suffixes = [s for pub in registry for s in pub.title_suffixes]
+    suffixes.sort(key=len, reverse=True)
+    return "|".join(_escape(s) for s in suffixes)
+
+
 def title_suffix_pattern(registry: PublicationRegistry) -> str:
-    suffixes: list[str] = []
+    """Matches the " - The Economist" a site appends to its own headlines."""
+    return r"\s*[|–—·•-]\s*(?:" + _suffix_alternatives(registry) + r")\s*$"
+
+
+def title_publisher_pattern(registry: PublicationRegistry) -> str:
+    """Captures just the publisher's name out of a headline.
+
+    A title that does not end in a known publication passes through unchanged,
+    which then simply misses in the lookup dictionary — no branch needed.
+    """
+    return r"^(?:.*[|–—·•-]\s*)?(" + _suffix_alternatives(registry) + r")\s*$"
+
+
+def publisher_name_map(registry: PublicationRegistry) -> dict[str, str]:
+    """{publication name: acronym}, for identifying a paper from its title."""
+    mapping: dict[str, str] = {}
     for pub in registry:
         for suffix in pub.title_suffixes:
-            suffixes.append(suffix.replace(".", r"\.").replace("&", r"&").replace("|", r"\|"))
-    suffixes.sort(key=len, reverse=True)
-    alternatives = "|".join(suffixes)
-    return r"\s*[|–—·•-]\s*(?:" + alternatives + r")\s*$"
+            mapping.setdefault(suffix, pub.acronym)
+    return mapping
 
 
 def root_domain_map(registry: PublicationRegistry) -> dict[str, str]:
@@ -224,17 +257,30 @@ def build_actions(registry: PublicationRegistry, destination: str) -> list[dict]
         dictionary_value(variable("RootMap"), variable("RootHost")),
         set_variable("AcronymRoot"),
 
-        # 4. Take whichever lookup answered, without needing an If block.
-        text(variable("AcronymExact"), " ", variable("AcronymRoot")),
+        # 4. The headline, as the share sheet reported it.
+        get_name(shortcut_input()),
+        set_variable("RawTitle"),
+
+        # 5. Papers sign their own headlines ("... | Financial Times"), so the
+        #    title identifies the publication when the URL cannot — an Apple
+        #    News link, or a paper whose domain is not in the table yet.
+        replace_text(variable("RawTitle"), title_publisher_pattern(registry), "$1"),
+        set_variable("PublisherGuess"),
+        dictionary(publisher_name_map(registry)),
+        set_variable("NameMap"),
+        dictionary_value(variable("NameMap"), variable("PublisherGuess")),
+        set_variable("AcronymTitle"),
+
+        # 6. Take whichever of the three lookups answered, with no If block.
+        text(variable("AcronymExact"), " ", variable("AcronymRoot"), " ",
+             variable("AcronymTitle")),
         set_variable("AcronymRaw"),
         replace_text(variable("AcronymRaw"), r"^\s+", ""),
         set_variable("AcronymTrimmed"),
         replace_text(variable("AcronymTrimmed"), r"\s.*$", ""),
         set_variable("Acronym"),
 
-        # 5. The headline, as the share sheet reported it.
-        get_name(shortcut_input()),
-        set_variable("RawTitle"),
+        # 7. Clean the headline up for use as a filename.
         replace_text(variable("RawTitle"), title_suffix_pattern(registry), ""),
         set_variable("TitleNoPublisher"),
         replace_text(variable("TitleNoPublisher"), r"[/\\:*?\"<>|#\[\]]", "-"),
@@ -242,7 +288,7 @@ def build_actions(registry: PublicationRegistry, destination: str) -> list[dict]
         replace_text(variable("TitleSafe"), r"\s{2,}", " "),
         set_variable("Title"),
 
-        # 6. "<ACRONYM> - <Title>", collapsing the gap if the lookup found nothing.
+        # 8. "<ACRONYM> - <Title>", collapsing the gap if nothing was found.
         text(variable("Acronym"), " - ", variable("Title")),
         set_variable("NameRaw"),
         replace_text(variable("NameRaw"), r"^\s*-\s*", ""),
@@ -250,7 +296,7 @@ def build_actions(registry: PublicationRegistry, destination: str) -> list[dict]
         replace_text(variable("NameTrimmed"), r"\s*-\s*$", ""),
         set_variable("FileName"),
 
-        # 7. Render, name, file.
+        # 9. Render, name, file.
         make_pdf(shortcut_input()),
         set_name(variable("FileName")),
         save_file(destination),

@@ -7,7 +7,8 @@ Shortcuts app looking odd, this page is the ground truth. It takes about ten
 minutes and it is worth doing once, because afterwards you can adjust anything
 you like.
 
-Open **Shortcuts → + → Add Action** and add these in order.
+Open **Shortcuts → + → Add Action** and add these in order. There are 45 of
+them, but most are Set Variable.
 
 ## Set up the Shortcut
 
@@ -62,39 +63,60 @@ To fill the dictionaries without typing sixty rows:
 python3 -m articlefiler publications --export-map
 ```
 
-### 4 — Take whichever lookup answered
+### 4 — Identify the paper from the headline
 
-There is no `If` block here on purpose — two regular expressions do the same job
-and cannot get tangled.
+The URL is not always enough: an Apple News link says nothing about who wrote
+the piece, and a screenshot carries no URL at all. But papers sign their own
+headlines — `… | Financial Times` — so the title is a second, independent way
+in.
 
 | Action | Setting |
 |---|---|
-| **Text** | `AcronymExact` ␣ `AcronymRoot` (both variables, one space between) |
+| **Get Name** | Input: **Shortcut Input** |
+| **Set Variable** | Name: `RawTitle` |
+| **Replace Text** | Input `RawTitle`. Find: `^(?:.*[\|–—·•-]\s*)?(The New York Times\|WSJ\|The Wall Street Journal\|Financial Times\|The Economist\|McKinsey\|Harvard Business Review\|Bloomberg\|Reuters)\s*$`, Replace: `$1` |
+| **Set Variable** | Name: `PublisherGuess` |
+| **Dictionary** | Key `Financial Times` → value `FT`, and so on for each name |
+| **Set Variable** | Name: `NameMap` |
+| **Get Dictionary Value** | Get **Value** for key `PublisherGuess` in `NameMap` |
+| **Set Variable** | Name: `AcronymTitle` |
+
+A headline that does not end in a known paper passes through that Replace Text
+untouched, and then simply misses in the dictionary — which is why no `If` is
+needed here either.
+
+### 5 — Take whichever of the three lookups answered
+
+| Action | Setting |
+|---|---|
+| **Text** | `AcronymExact` ␣ `AcronymRoot` ␣ `AcronymTitle` (three variables, single spaces) |
 | **Set Variable** | Name: `AcronymRaw` |
 | **Replace Text** | Input `AcronymRaw`, Find `^\s+`, Replace empty |
 | **Set Variable** | Name: `AcronymTrimmed` |
 | **Replace Text** | Input `AcronymTrimmed`, Find `\s.*$`, Replace empty |
 | **Set Variable** | Name: `Acronym` |
 
-That leaves the first non-empty answer, or nothing at all if neither matched.
+That leaves the first non-empty answer, or nothing at all if none matched.
 
-### 5 — Clean up the headline
+### 6 — Clean up the headline
 
 | Action | Setting |
 |---|---|
-| **Get Name** | Input: **Shortcut Input** |
-| **Set Variable** | Name: `RawTitle` |
-| **Replace Text** | Strip the paper's own name off the end. Find: `\s*[\|–—·•-]\s*(?:The New York Times\|WSJ\|The Wall Street Journal\|Financial Times\|The Economist\|McKinsey.*\|Harvard Business Review\|Bloomberg\|Reuters)\s*$` |
+| **Replace Text** | Input `RawTitle`. Strip the paper's own name off the end. Find: `\s*[\|–—·•-]\s*(?:The New York Times\|WSJ\|The Wall Street Journal\|Financial Times\|The Economist\|McKinsey\|Harvard Business Review\|Bloomberg\|Reuters)\s*$` |
 | **Set Variable** | Name: `TitleNoPublisher` |
 | **Replace Text** | Find: `[/\\:*?"<>\|#\[\]]`, Replace: `-` |
 | **Set Variable** | Name: `TitleSafe` |
 | **Replace Text** | Find: `\s{2,}`, Replace: a single space |
 | **Set Variable** | Name: `Title` |
 
-The generator builds that first pattern from the full publication list; the
-handful above covers the papers you read most.
+Note the ordering: the acronym is read off the title in step 4 **before** this
+step strips the publisher's name away. Do it the other way round and an Apple
+News article loses its attribution entirely.
 
-### 6 — Compose the filename
+The generator builds both patterns from the full publication list; the handful
+above covers the papers you read most.
+
+### 7 — Compose the filename
 
 | Action | Setting |
 |---|---|
@@ -108,7 +130,7 @@ handful above covers the papers you read most.
 Those last two matter: if the paper was not recognised you get
 `Headline.pdf` rather than a limp ` - Headline.pdf`.
 
-### 7 — Render, name, save
+### 8 — Render, name, save
 
 | Action | Setting |
 |---|---|

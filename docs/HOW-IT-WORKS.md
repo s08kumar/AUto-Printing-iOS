@@ -30,7 +30,9 @@ names it uses, and the longest matching suffix wins — which is why
 not as The Hindu.
 
 This is what rescues Apple News links and screenshots, neither of which carries
-a usable URL.
+a usable URL. The Shortcut uses the same signal on the iPhone, and reads the
+acronym off the title *before* stripping the publisher's name away — the other
+order would throw the attribution out with the suffix.
 
 ## 3. The PDF's own metadata
 
