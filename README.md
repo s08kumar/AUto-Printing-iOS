@@ -19,6 +19,13 @@ the Shortcut syncs across all three.
 
 ## Start here
 
+**[`docs/FROM-THE-APPS.md`](docs/FROM-THE-APPS.md)** — filing from the NYT,
+WSJ, FT and Economist apps, which offer no Print and no PDF. One tap on the
+phone shares the link; the Mac renders it in Safari, where your subscription
+lives, and files it as `NYT - Headline.pdf`.
+
+## Also
+
 **[`docs/THE-SETUP.md`](docs/THE-SETUP.md)** — what actually works, on both
 devices, distilled. Read that first; the rest of this file is background.
 

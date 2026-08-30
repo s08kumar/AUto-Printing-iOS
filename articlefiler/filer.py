@@ -15,6 +15,7 @@ from .classify import Decision, Signals, classify, read_sidecar, resolve_aggrega
 from .config import Config
 from .pdfmeta import read_pdf_metadata, read_spotlight_metadata
 from .publications import PublicationRegistry
+from .render import render_url, url_from_drop
 from .titles import strip_copy_suffix
 
 # iCloud keeps not-yet-downloaded files as a hidden ".name.ext.icloud" stub.
@@ -220,14 +221,55 @@ def iter_inbox(config: Config) -> list[Path]:
     return entries
 
 
+def process_url_drops(
+    config: Config,
+    *,
+    dry_run: bool = False,
+    log=None,
+) -> list[str]:
+    """Render any URL the phone dropped, then remove the drop.
+
+    The newspaper apps can only share a link, so the phone saves the link and
+    the Mac — signed in to the subscription — renders it.
+    """
+    messages: list[str] = []
+    for inbox in config.inbox_paths:
+        if not inbox.is_dir():
+            continue
+        try:
+            entries = sorted(p for p in inbox.iterdir() if p.is_file())
+        except PermissionError:
+            continue
+        for path in entries:
+            url = url_from_drop(path)
+            if not url:
+                continue
+            if dry_run:
+                messages.append(f"would render {url}")
+                continue
+            result = render_url(url, config.inbox_path, timeout=config.network_timeout * 6)
+            if result.ok:
+                path.unlink(missing_ok=True)
+                messages.append(f"rendered {url} -> {result.path.name}")
+            else:
+                # Leave the drop in place so the next pass can retry it.
+                messages.append(f"could not render {url}: {result.error}")
+            if log is not None:
+                log(messages[-1])
+    return messages
+
+
 def process_inbox(
     config: Config,
     registry: PublicationRegistry,
     *,
     dry_run: bool = False,
     settle: bool = True,
+    render: bool = True,
 ) -> list[Plan]:
     """Rename and file everything currently sitting in the inbox."""
+    if render:
+        process_url_drops(config, dry_run=dry_run)
     results: list[Plan] = []
     for path in iter_inbox(config):
         if is_icloud_stub(path):

@@ -573,3 +573,91 @@ class ExplainDefaultsTests(FilerTestCase):
             config_path = Path(tmp) / "config.json"
             self.config.save(config_path)
             self.assertEqual(main(["--config", str(config_path), "explain"]), 0)
+
+
+class UrlDropTests(FilerTestCase):
+    """The newspaper apps can only share a link, so the phone drops the link
+    and the Mac renders it."""
+
+    def test_a_dropped_url_file_is_recognised(self):
+        from articlefiler.render import url_from_drop
+
+        drop = self.inbox / "3F2A11.txt"
+        drop.write_text("https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html\n")
+        self.assertEqual(
+            url_from_drop(drop),
+            "https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html",
+        )
+
+    def test_trailing_punctuation_is_trimmed(self):
+        from articlefiler.render import url_from_drop
+
+        drop = self.inbox / "x.txt"
+        drop.write_text("See https://www.wsj.com/articles/fed-holds.html.")
+        self.assertTrue(url_from_drop(drop).endswith("fed-holds.html"))
+
+    def test_a_pdf_is_not_treated_as_a_url_drop(self):
+        from articlefiler.render import url_from_drop
+
+        pdf = self.inbox / "a.pdf"
+        pdf.write_bytes(b"%PDF-1.7\nhttps://www.nytimes.com/x\n")
+        self.assertEqual(url_from_drop(pdf), "")
+
+    def test_a_large_text_file_is_not_scanned(self):
+        from articlefiler.render import url_from_drop
+
+        drop = self.inbox / "big.txt"
+        drop.write_text("x" * 70_000 + " https://www.nytimes.com/x")
+        self.assertEqual(url_from_drop(drop), "")
+
+    def test_a_text_file_with_no_url_is_ignored(self):
+        from articlefiler.render import url_from_drop
+
+        drop = self.inbox / "notes.txt"
+        drop.write_text("just some notes")
+        self.assertEqual(url_from_drop(drop), "")
+
+    def test_dry_run_reports_without_rendering(self):
+        from articlefiler.filer import process_url_drops
+
+        (self.inbox / "drop.txt").write_text("https://www.nytimes.com/2026/08/30/x.html")
+        messages = process_url_drops(self.config, dry_run=True)
+        self.assertEqual(len(messages), 1)
+        self.assertIn("would render", messages[0])
+        self.assertTrue((self.inbox / "drop.txt").is_file(), "dry run must not consume it")
+
+    def test_a_failed_render_leaves_the_drop_for_a_retry(self):
+        from unittest.mock import patch
+
+        from articlefiler.filer import process_url_drops
+        from articlefiler.render import RenderResult
+
+        drop = self.inbox / "drop.txt"
+        drop.write_text("https://www.nytimes.com/2026/08/30/x.html")
+        with patch("articlefiler.filer.render_url",
+                   return_value=RenderResult(url="x", error="Safari asleep")):
+            messages = process_url_drops(self.config)
+        self.assertIn("could not render", messages[0])
+        self.assertTrue(drop.is_file(), "the link must survive so it can be retried")
+
+    def test_a_successful_render_consumes_the_drop(self):
+        from unittest.mock import patch
+
+        from articlefiler.filer import process_url_drops
+        from articlefiler.render import RenderResult
+
+        drop = self.inbox / "drop.txt"
+        drop.write_text("https://www.nytimes.com/2026/08/30/x.html")
+        rendered = self.inbox / "Nepal Floods - The New York Times.pdf"
+        rendered.write_bytes(b"%PDF-1.7\n%%EOF\n")
+        with patch("articlefiler.filer.render_url",
+                   return_value=RenderResult(url="x", path=rendered, title="Nepal Floods")):
+            process_url_drops(self.config)
+        self.assertFalse(drop.exists())
+
+    def test_the_rendered_pdf_is_then_filed_under_its_publication(self):
+        rendered = self.inbox / "Nepal Floods - The New York Times.pdf"
+        rendered.write_bytes(b"%PDF-1.7\n%%EOF\n")
+        plans = process_inbox(self.config, self.registry, settle=False, render=False)
+        self.assertEqual([p.action for p in plans], ["move"])
+        self.assertTrue((self.library / "NYT - Nepal Floods.pdf").is_file())

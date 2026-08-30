@@ -1,5 +1,11 @@
 # The setup
 
+**Filing from inside the newspaper apps — the actual problem — is in
+[FROM-THE-APPS.md](FROM-THE-APPS.md).** The apps have no Print and no PDF, so
+the phone shares the link and the Mac renders it. This page covers articles
+you are reading in Safari.
+
+
 Two devices, one route, one folder. This is what works, established by
 testing rather than reasoning.
 

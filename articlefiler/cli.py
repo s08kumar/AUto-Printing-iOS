@@ -18,6 +18,8 @@ from .classify import Signals, classify
 from .config import Config, INBOX_NAME, SUBFOLDER_MODES, config_path, user_publications_path
 from .filer import AccessDenied, apply_plan, plan_file, process_inbox
 from .publications import Publication, PublicationRegistry, load_default_registry
+from .render import check_environment as render_check
+from .render import render_url
 from .verify import inspect, inspect_folder
 from .watch import Watcher, setup_logging
 
@@ -274,6 +276,34 @@ def cmd_verify(args) -> int:
     return 0
 
 
+def cmd_render(args) -> int:
+    """Render a URL to PDF through Safari, and file it."""
+    config, registry = _load(args)
+
+    problems = render_check()
+    if problems:
+        from .render import ACCESSIBILITY_HELP
+
+        print(f"cannot render: {problems[0]}", file=sys.stderr)
+        if "Accessibility" in problems[0]:
+            print(file=sys.stderr)
+            print(ACCESSIBILITY_HELP, file=sys.stderr)
+        return 2
+
+    failures = 0
+    for url in args.urls:
+        print(f"rendering {url}")
+        result = render_url(url, config.inbox_path, timeout=args.timeout)
+        if not result.ok:
+            print(f"  failed: {result.error}", file=sys.stderr)
+            failures += 1
+            continue
+        print(f"  captured: {result.path.name}")
+        plan = apply_plan(plan_file(result.path, config, registry))
+        print(f"  {plan.describe()}")
+    return 1 if failures else 0
+
+
 def cmd_explain(args) -> int:
     """Show every signal a file offers, and how the name was decided.
 
@@ -474,6 +504,11 @@ def cmd_doctor(args) -> int:
         readable = problem is None or "does not exist" in problem
         check(readable, f"{label} is readable", f"cannot read the {label}: {problem}")
         denied = denied or (problem is not None and "permission denied" in problem)
+    render_problems = render_check()
+    if render_problems:
+        print(f"  INFO  URL rendering: unavailable — {render_problems[0]}")
+    else:
+        print("  INFO  URL rendering: ready (Safari)")
     print(f"  INFO  {len(registry)} publications known")
     print(f"  INFO  Shortcut save path: {config.icloud_relative_library}")
     try:
@@ -546,6 +581,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--hours", type=float, default=24, help="how far back to look")
     p.add_argument("--limit", type=int, default=25)
     p.set_defaults(func=cmd_locate)
+
+    p = sub.add_parser("render", help="render a URL to PDF via Safari, then file it")
+    p.add_argument("urls", nargs="+")
+    p.add_argument("--timeout", type=float, default=45.0,
+                   help="seconds to wait for the page to load")
+    p.set_defaults(func=cmd_render)
 
     p = sub.add_parser("explain", help="show what signals a file offers, and why")
     p.add_argument("paths", nargs="*", help="defaults to the most recent documents")

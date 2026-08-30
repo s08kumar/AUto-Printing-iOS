@@ -88,6 +88,12 @@ class Watcher:
         self.config.library_path.mkdir(parents=True, exist_ok=True)
         for inbox in self.config.inbox_paths:
             log.info("watching %s", inbox)
+        from .render import check_environment
+        problems = check_environment()
+        if problems:
+            log.info("URL rendering unavailable: %s", problems[0])
+        else:
+            log.info("URL rendering ready (Safari)")
         log.info("filing into %s", self.config.library_path)
         while self._running:
             self.tick()
