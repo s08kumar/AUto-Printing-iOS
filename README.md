@@ -17,6 +17,11 @@ No print dialog, no "Save to Files" folder picker, no renaming afterwards. The
 same thing works on the MacBook and the iMac, because the folder is iCloud and
 the Shortcut syncs across all three.
 
+## Start here
+
+**[`docs/THE-SETUP.md`](docs/THE-SETUP.md)** — what actually works, on both
+devices, distilled. Read that first; the rest of this file is background.
+
 ## Yes, this can be done — here is the trick
 
 The newspaper apps do not offer **Print**, which is what sends most people
