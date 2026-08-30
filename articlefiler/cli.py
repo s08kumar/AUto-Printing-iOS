@@ -39,9 +39,25 @@ def cmd_init(args) -> int:
     config, _ = _load(args)
     config.library_path.mkdir(parents=True, exist_ok=True)
     config.inbox_path.mkdir(parents=True, exist_ok=True)
+
+    # The Save File action resolves its subpath against iCloud Drive/Shortcuts.
+    # If that folder is absent — never created, or deleted — the save writes
+    # nowhere and reports nothing, so create the landing zone up front.
+    created: list[Path] = []
+    for landing in config.shortcuts_inbox_paths:
+        if not landing.exists():
+            try:
+                landing.mkdir(parents=True, exist_ok=True)
+                created.append(landing)
+            except OSError as error:
+                print(f"could not create {landing}: {error}", file=sys.stderr)
+
     path = config.save(Path(args.config).expanduser() if args.config else None)
     print(f"library : {config.library_path}")
     print(f"inbox   : {config.inbox_path}")
+    for landing in config.shortcuts_inbox_paths:
+        note = "  (created)" if landing in created else ""
+        print(f"landing : {landing}{note}")
     print(f"config  : {path}")
     print(f"log     : {config.log_file}")
     print()
@@ -268,6 +284,11 @@ def cmd_doctor(args) -> int:
     for extra in config.inbox_paths[1:]:
         state = "exists" if extra.is_dir() else "not created yet"
         print(f"  INFO  also watching: {extra}  ({state})")
+    if not any(p.is_dir() for p in config.shortcuts_inbox_paths):
+        print("  WARN  the iCloud Drive/Shortcuts landing folder does not exist.")
+        print("        Save File resolves its subpath against it, so saves from")
+        print("        the iPhone go nowhere and report nothing. Recreate it with:")
+        print("          python3 -m articlefiler init")
     icloud = "com~apple~CloudDocs" in str(config.library_path)
     check(icloud, "library is inside iCloud Drive",
           "library is not inside iCloud Drive — it will not sync to your iPhone")

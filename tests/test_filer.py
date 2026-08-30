@@ -1,4 +1,5 @@
 import json
+import unittest.mock
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -371,3 +372,29 @@ class VerifyTests(unittest.TestCase):
         from articlefiler.verify import inspect
 
         self.assertFalse(inspect(self.tmp / "nope.pdf").readable)
+
+
+class LandingFolderTests(unittest.TestCase):
+    """Save File resolves its subpath against iCloud Drive/Shortcuts. If that
+    folder is missing the save writes nowhere and says nothing, so init
+    creates it."""
+
+    def test_init_creates_the_shortcuts_landing_folders(self):
+        from articlefiler.cli import main
+
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config_path = root / "config.json"
+            library = root / "Articles"
+            Config(library=str(library)).save(config_path)
+
+            with unittest.mock.patch("articlefiler.config.ICLOUD_ROOT", root / "iCloud"):
+                self.assertEqual(main(["--config", str(config_path), "init"]), 0)
+                landing = root / "iCloud" / "Shortcuts" / "Articles"
+                self.assertTrue(landing.is_dir())
+                self.assertTrue((landing / "_Inbox").is_dir())
+
+    def test_shortcuts_paths_follow_the_library_name(self):
+        config = Config(library="/tmp/My Articles")
+        self.assertTrue(all(p.name in ("My Articles", "_Inbox")
+                            for p in config.shortcuts_inbox_paths))
