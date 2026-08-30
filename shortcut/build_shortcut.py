@@ -304,7 +304,7 @@ def build_actions(registry: PublicationRegistry, destination: str) -> list[dict]
     ]
 
 
-def build_shortcut(registry: PublicationRegistry, destination: str, mac: bool = False) -> dict:
+def build_shortcut(registry: PublicationRegistry, destination: str) -> dict:
     workflow = {
         "WFWorkflowClientVersion": "2607.0.3",
         "WFWorkflowMinimumClientVersion": 900,
@@ -316,6 +316,9 @@ def build_shortcut(registry: PublicationRegistry, destination: str, mac: bool = 
         },
         "WFWorkflowImportQuestions": [],
         "WFWorkflowTypes": ["ActionExtension"],
+        # Mac surfaces. iOS ignores this key; omitting it leaves the Shortcut
+        # invisible in Services, Finder and Safari's share menu on the Mac.
+        "WFQuickActionSurfaces": ["Services", "Finder"],
         "WFWorkflowInputContentItemClasses": [
             "WFArticleContentItem",
             "WFImageContentItem",
@@ -328,8 +331,6 @@ def build_shortcut(registry: PublicationRegistry, destination: str, mac: bool = 
         ],
         "WFWorkflowActions": build_actions(registry, destination),
     }
-    if mac:
-        workflow["WFQuickActionSurfaces"] = ["Services", "Finder", "TouchBar"]
     return workflow
 
 

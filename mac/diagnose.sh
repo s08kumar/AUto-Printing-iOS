@@ -20,6 +20,14 @@ echo "article-filer diagnostics — $(date '+%Y-%m-%d %H:%M')"
 echo "macOS $(sw_vers -productVersion 2>/dev/null || echo '?'), $(uname -m)"
 echo "repo: $REPO @ $(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo 'not a git checkout')"
 
+rule "Build output"
+# The most common "I can't find it" is that signing never produced a file.
+if [[ -d "$REPO/build" ]]; then
+  ls -lh "$REPO/build"/*.shortcut 2>/dev/null || echo "build/ exists but holds no .shortcut file"
+else
+  echo "no build/ directory — run: make shortcut"
+fi
+
 rule "Is the Shortcut installed?"
 if command -v shortcuts >/dev/null 2>&1; then
   if [[ "$SHOW_ALL" == "--all" ]]; then
