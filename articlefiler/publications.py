@@ -42,8 +42,13 @@ class Publication:
 
     @classmethod
     def from_dict(cls, raw: dict) -> "Publication":
+        acronym = str(raw["acronym"]).strip()
+        if not acronym or re.search(r"\s", acronym):
+            raise ValueError(
+                f"publication prefix must be one word with no spaces, got {acronym!r}"
+            )
         return cls(
-            acronym=str(raw["acronym"]).strip(),
+            acronym=acronym,
             name=str(raw.get("name") or raw["acronym"]).strip(),
             domains=tuple(
                 d.strip().lower().lstrip(".") for d in raw.get("domains", []) if str(d).strip()

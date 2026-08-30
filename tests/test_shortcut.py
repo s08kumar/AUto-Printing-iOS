@@ -168,7 +168,7 @@ class LookupTableTests(unittest.TestCase):
     def test_root_domains_are_reduced_to_two_labels(self):
         mapping = root_domain_map(self.registry)
         self.assertEqual(mapping["nytimes.com"], "NYT")
-        self.assertEqual(mapping["indiatimes.com"], "ET")  # first registered wins
+        self.assertEqual(mapping["indiatimes.com"], "EconomicTimes")  # first registered wins
 
     def test_the_title_suffix_pattern_matches_a_real_headline(self):
         import re

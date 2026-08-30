@@ -85,7 +85,7 @@
       ]
     },
     {
-      "acronym": "BBG",
+      "acronym": "Bloomberg",
       "name": "Bloomberg",
       "domains": [
         "bloomberg.com",
@@ -99,7 +99,7 @@
       ]
     },
     {
-      "acronym": "REU",
+      "acronym": "Reuters",
       "name": "Reuters",
       "domains": [
         "reuters.com",
@@ -110,7 +110,7 @@
       ]
     },
     {
-      "acronym": "GRD",
+      "acronym": "Guardian",
       "name": "The Guardian",
       "domains": [
         "theguardian.com",
@@ -122,7 +122,7 @@
       ]
     },
     {
-      "acronym": "WAPO",
+      "acronym": "WashPost",
       "name": "The Washington Post",
       "domains": [
         "washingtonpost.com",
@@ -134,7 +134,7 @@
       ]
     },
     {
-      "acronym": "ATL",
+      "acronym": "Atlantic",
       "name": "The Atlantic",
       "domains": [
         "theatlantic.com"
@@ -144,7 +144,7 @@
       ]
     },
     {
-      "acronym": "NYR",
+      "acronym": "NewYorker",
       "name": "The New Yorker",
       "domains": [
         "newyorker.com"
@@ -154,7 +154,7 @@
       ]
     },
     {
-      "acronym": "MIT",
+      "acronym": "TechReview",
       "name": "MIT Technology Review",
       "domains": [
         "technologyreview.com"
@@ -164,7 +164,7 @@
       ]
     },
     {
-      "acronym": "NAT",
+      "acronym": "Nature",
       "name": "Nature",
       "domains": [
         "nature.com",
@@ -177,7 +177,7 @@
       ]
     },
     {
-      "acronym": "SCI",
+      "acronym": "Science",
       "name": "Science",
       "domains": [
         "science.org",
@@ -234,7 +234,7 @@
       ]
     },
     {
-      "acronym": "BAIN",
+      "acronym": "Bain",
       "name": "Bain & Company",
       "domains": [
         "bain.com"
@@ -245,7 +245,7 @@
       ]
     },
     {
-      "acronym": "TH",
+      "acronym": "Hindu",
       "name": "The Hindu",
       "domains": [
         "thehindu.com",
@@ -258,7 +258,7 @@
       ]
     },
     {
-      "acronym": "IE",
+      "acronym": "IndianExpress",
       "name": "The Indian Express",
       "domains": [
         "indianexpress.com",
@@ -271,7 +271,7 @@
       ]
     },
     {
-      "acronym": "MINT",
+      "acronym": "Mint",
       "name": "Mint",
       "domains": [
         "livemint.com"
@@ -282,7 +282,7 @@
       ]
     },
     {
-      "acronym": "BS",
+      "acronym": "BusinessStandard",
       "name": "Business Standard",
       "domains": [
         "business-standard.com"
@@ -292,7 +292,7 @@
       ]
     },
     {
-      "acronym": "ET",
+      "acronym": "EconomicTimes",
       "name": "The Economic Times",
       "domains": [
         "economictimes.indiatimes.com",
@@ -305,7 +305,7 @@
       ]
     },
     {
-      "acronym": "TOI",
+      "acronym": "TimesOfIndia",
       "name": "The Times of India",
       "domains": [
         "timesofindia.indiatimes.com",
@@ -317,7 +317,7 @@
       ]
     },
     {
-      "acronym": "HT",
+      "acronym": "HindustanTimes",
       "name": "Hindustan Times",
       "domains": [
         "hindustantimes.com"
@@ -327,7 +327,7 @@
       ]
     },
     {
-      "acronym": "DTE",
+      "acronym": "DownToEarth",
       "name": "Down To Earth",
       "domains": [
         "downtoearth.org.in"
@@ -338,7 +338,7 @@
       ]
     },
     {
-      "acronym": "CW",
+      "acronym": "CarbonBrief",
       "name": "Carbon Brief",
       "domains": [
         "carbonbrief.org"
@@ -348,7 +348,7 @@
       ]
     },
     {
-      "acronym": "NIK",
+      "acronym": "Nikkei",
       "name": "Nikkei Asia",
       "domains": [
         "asia.nikkei.com",
@@ -360,7 +360,7 @@
       ]
     },
     {
-      "acronym": "SEM",
+      "acronym": "SloanReview",
       "name": "MIT Sloan Management Review",
       "domains": [
         "sloanreview.mit.edu"

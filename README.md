@@ -108,8 +108,11 @@ make shortcut          # rebuild the Shortcut so the iPhone learns it too
 ```
 
 `python3 -m articlefiler publications` lists the 31 that ship by default —
-NYT, WSJ, FT, The Economist, McKinsey, HBR, Bloomberg, Reuters, Nature, Science,
+NYT, WSJ, FT, Economist, McKinsey, HBR, Bloomberg, Reuters, Nature, Science,
 IEA, IRENA, and the Indian dailies among them.
+
+Prefixes are one word with no spaces, because the "already filed" check reads
+the prefix up to the first space. `WashPost`, not `Washington Post`.
 
 ## Changing the folder or the naming pattern
 

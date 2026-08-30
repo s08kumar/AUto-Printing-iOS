@@ -91,7 +91,7 @@ class TitleSuffixTests(unittest.TestCase):
 
     def test_longest_suffix_wins(self):
         pub, title = self.registry.match_title("Steel prices - The Hindu BusinessLine")
-        self.assertEqual(pub.acronym, "TH")
+        self.assertEqual(pub.acronym, "Hindu")
         self.assertEqual(title, "Steel prices")
 
     def test_no_suffix_returns_none(self):
@@ -136,3 +136,33 @@ class RegistryLoadingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PrefixShapeTests(unittest.TestCase):
+    """The already-filed check matches a prefix containing no whitespace, so a
+    two-word prefix would silently stop working."""
+
+    def test_no_bundled_prefix_contains_whitespace(self):
+        for pub in PublicationRegistry.bundled():
+            self.assertNotIn(" ", pub.acronym, f"{pub.name} has a multi-word prefix")
+
+    def test_a_multi_word_prefix_is_rejected(self):
+        with self.assertRaises(ValueError):
+            Publication.from_dict({"acronym": "Washington Post", "name": "x"})
+
+    def test_an_empty_prefix_is_rejected(self):
+        with self.assertRaises(ValueError):
+            Publication.from_dict({"acronym": "  ", "name": "x"})
+
+    def test_word_prefixes_round_trip_through_filing(self):
+        from articlefiler.titles import split_prefixed
+
+        registry = PublicationRegistry.bundled()
+        known = registry.acronyms()
+        for stem, expected in (
+            ("Economist - Grid storage", "Economist"),
+            ("McKinsey - Reimagining efficiency", "McKinsey"),
+            ("BusinessStandard - Steel prices", "BusinessStandard"),
+            ("NYT - The Fed blinks", "NYT"),
+        ):
+            self.assertEqual(split_prefixed(stem, known)[0], expected)
