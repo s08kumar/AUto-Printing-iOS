@@ -554,3 +554,22 @@ class VerifySizeRuleTests(VerifyPrecisionTests):
             report = inspect(self.build(Path(tmp), "long_wall.pdf", 3, content, pad=90000))
         self.assertTrue(report.suspicious)
         self.assertTrue(any("paywall wording" in r for r in report.reasons))
+
+
+class ExplainDefaultsTests(FilerTestCase):
+    def test_explain_with_no_paths_finds_recent_documents(self):
+        from articlefiler.cli import main
+
+        (self.library / "NYT - Something.pdf").write_bytes(b"%PDF-1.7\n%%EOF\n")
+        with TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "config.json"
+            self.config.save(config_path)
+            self.assertEqual(main(["--config", str(config_path), "explain"]), 0)
+
+    def test_explain_reports_when_there_is_nothing_to_find(self):
+        from articlefiler.cli import main
+
+        with TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "config.json"
+            self.config.save(config_path)
+            self.assertEqual(main(["--config", str(config_path), "explain"]), 0)

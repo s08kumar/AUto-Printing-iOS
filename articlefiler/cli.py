@@ -284,8 +284,29 @@ def cmd_explain(args) -> int:
     from .pdfmeta import read_pdf_metadata, read_spotlight_metadata
 
     config, registry = _load(args)
-    for raw in args.paths:
-        path = Path(raw).expanduser()
+
+    paths = [Path(p).expanduser() for p in args.paths]
+    if not paths:
+        # No argument: the most recent files, wherever they landed. Saves
+        # spelling out a path with spaces in it, or fighting a shell glob.
+        candidates: list[Path] = []
+        for folder in [config.library_path, *config.inbox_paths]:
+            if not folder.is_dir():
+                continue
+            try:
+                candidates.extend(p for p in folder.glob("*") if p.is_file())
+            except OSError:
+                continue
+        candidates.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
+        paths = [p for p in candidates if p.suffix.lower() in config.extensions][: args.recent]
+        if not paths:
+            print("no documents found in:")
+            for folder in [config.library_path, *config.inbox_paths]:
+                print(f"  {folder}{'' if folder.is_dir() else '   (does not exist)'}")
+            return 0
+        print(f"most recent {len(paths)} document(s):\n")
+
+    for path in paths:
         print(f"=== {path.name}")
         if not path.is_file():
             print("  not a file")
@@ -527,7 +548,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_locate)
 
     p = sub.add_parser("explain", help="show what signals a file offers, and why")
-    p.add_argument("paths", nargs="+")
+    p.add_argument("paths", nargs="*", help="defaults to the most recent documents")
+    p.add_argument("--recent", type=int, default=3,
+                   help="how many recent documents to explain when none are named")
     p.set_defaults(func=cmd_explain)
 
     p = sub.add_parser("selftest", help="prove the Mac side works, end to end")
