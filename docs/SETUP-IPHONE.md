@@ -88,6 +88,13 @@ syncs.
 [PAYWALLS.md](PAYWALLS.md). Use the Safari or screenshot route for that
 publication.
 
+**It says it filed the article, but the folder is empty.** The file is not
+lost — the Save File action resolved to a different folder, usually
+`iCloud Drive/Shortcuts/`. On the Mac, `python3 -m articlefiler locate` finds
+it. The fix is to open the Shortcut, tap the **Save File** action, and re-pick
+the destination folder through the picker: choosing it by hand records the
+storage location properly, which a typed path does not.
+
 **Everything lands in `_Inbox` instead of the main folder.** That is the Save
 File destination pointing one level too deep. Open the Shortcut, tap **Save
 File**, and re-pick the parent folder.

@@ -142,6 +142,66 @@ def cmd_config(args) -> int:
     return 0
 
 
+def cmd_locate(args) -> int:
+    """Find recently-saved documents that are not in the library.
+
+    When a Shortcut reports success but nothing appears where you expected,
+    the file is rarely lost — it is in whatever folder the Save File action
+    actually resolved to. This looks in the handful of places that can be.
+    """
+    from .config import ICLOUD_ROOT
+
+    config, _ = _load(args)
+    library = config.library_path
+    cutoff = datetime.now().timestamp() - args.hours * 3600
+
+    roots = [
+        ICLOUD_ROOT,
+        Path.home() / "Downloads",
+        Path.home() / "Desktop",
+        Path.home() / "Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents",
+    ]
+
+    found: list[tuple[float, Path]] = []
+    seen: set[Path] = set()
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in config.extensions:
+                continue
+            if path in seen:
+                continue
+            seen.add(path)
+            try:
+                mtime = path.stat().st_mtime
+            except OSError:
+                continue
+            if mtime < cutoff:
+                continue
+            if library in path.parents:
+                continue
+            found.append((mtime, path))
+
+    if not found:
+        print(f"no documents saved outside the library in the last {args.hours}h")
+        print(f"searched: {', '.join(str(r) for r in roots if r.is_dir())}")
+        return 0
+
+    found.sort(reverse=True)
+    print(f"{len(found)} document(s) saved outside the library in the last {args.hours}h:")
+    print(f"(library is {library})")
+    for mtime, path in found[: args.limit]:
+        when = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M")
+        print(f"  {when}  {path}")
+    if len(found) > args.limit:
+        print(f"  ... and {len(found) - args.limit} more")
+    print()
+    print("To file them:")
+    print("  python3 -m articlefiler file '<path>'")
+    return 0
+
+
 def cmd_doctor(args) -> int:
     config, registry = _load(args)
     problems = 0
@@ -219,6 +279,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("config", help="print the effective configuration")
     p.set_defaults(func=cmd_config)
+
+    p = sub.add_parser("locate", help="find documents saved outside the library")
+    p.add_argument("--hours", type=float, default=24, help="how far back to look")
+    p.add_argument("--limit", type=int, default=25)
+    p.set_defaults(func=cmd_locate)
 
     p = sub.add_parser("doctor", help="check the setup")
     p.set_defaults(func=cmd_doctor)
