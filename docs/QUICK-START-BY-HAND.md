@@ -26,6 +26,31 @@ that one thing cannot.
    Text.
 6. Done.
 
+## Building it on the Mac instead
+
+Easier than on the phone, and it syncs to the iPhone afterwards.
+
+1. Open **Shortcuts** on the Mac → **File → New Shortcut**.
+2. Search the right-hand action list for **Make PDF**, drag it in.
+   Set its input to **Shortcut Input**.
+3. Search for **Save File**, drag it in below.
+   - Turn **Ask Where to Save** off.
+   - Click the destination and pick, through the file picker:
+     **iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist Articles → _Inbox**
+4. Rename it **File Article** (double-click the name in the toolbar).
+5. In the sidebar on the right: tick **Show in Share Sheet**, and
+   **Use as Quick Action → Services Menu**.
+
+Test it straight away: open an article in Safari, **Share → File Article**.
+Safari is signed in to your subscriptions, so what gets rendered is the real
+article rather than a paywall.
+
+## Delete the generated ones first
+
+`File Article.signed`, `File Article (Simple)` and `File Article (Ask)` will
+only confuse matters — and the 45-action one hangs. Remove them from the
+Shortcuts app before building this, so there is one shortcut with one name.
+
 ## Use it
 
 Open an article, **Share** → **File Article**.
