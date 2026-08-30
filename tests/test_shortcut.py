@@ -250,3 +250,39 @@ class ActionListTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AskingVariantTests(unittest.TestCase):
+    """The diagnostic variant. Every other shortcut writes to a destination it
+    cannot verify; this one puts the result in front of the user, so a silent
+    save failure becomes visible."""
+
+    def setUp(self):
+        from shortcut.build_shortcut import build_asking_shortcut
+
+        self.workflow = build_asking_shortcut("/Articles")
+
+    def test_it_is_two_actions(self):
+        self.assertEqual(len(self.workflow["WFWorkflowActions"]), 2)
+
+    def test_it_renders_then_saves(self):
+        used = [a["WFWorkflowActionIdentifier"] for a in self.workflow["WFWorkflowActions"]]
+        self.assertEqual(used, ["is.workflow.actions.makepdf",
+                                "is.workflow.actions.documentpicker.save"])
+
+    def test_it_asks_where_to_save(self):
+        save = self.workflow["WFWorkflowActions"][1]["WFWorkflowActionParameters"]
+        self.assertTrue(save["WFAskWhereToSave"], "the whole point is that it prompts")
+
+    def test_it_has_no_notification_to_give_false_comfort(self):
+        used = [a["WFWorkflowActionIdentifier"] for a in self.workflow["WFWorkflowActions"]]
+        self.assertNotIn("is.workflow.actions.notification", used)
+
+    def test_the_other_variants_still_do_not_ask(self):
+        from shortcut.build_shortcut import build_shortcut, build_simple_shortcut
+
+        for workflow in (build_shortcut(PublicationRegistry.bundled(), "/Articles"),
+                         build_simple_shortcut("/Articles/_Inbox")):
+            save = next(a for a in workflow["WFWorkflowActions"]
+                        if a["WFWorkflowActionIdentifier"].endswith("documentpicker.save"))
+            self.assertFalse(save["WFWorkflowActionParameters"]["WFAskWhereToSave"])

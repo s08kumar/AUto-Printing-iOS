@@ -153,13 +153,20 @@ def set_name(name: dict) -> dict:
     )
 
 
-def save_file(destination: str, overwrite: bool = False) -> dict:
-    return action(
-        "is.workflow.actions.documentpicker.save",
-        WFFileDestinationPath=destination,
-        WFAskWhereToSave=False,
-        WFSaveFileOverwrite=overwrite,
-    )
+def save_file(destination: str, overwrite: bool = False, ask: bool = False) -> dict:
+    """Save the previous action's output.
+
+    `ask=True` shows the folder picker. That is slower, but it is the only
+    form that cannot fail silently: an unbound destination writes nowhere and
+    reports nothing, whereas the picker either shows you a document to save or
+    makes it obvious that there is nothing to save.
+    """
+    parameters = {
+        "WFFileDestinationPath": destination,
+        "WFAskWhereToSave": ask,
+        "WFSaveFileOverwrite": overwrite,
+    }
+    return action("is.workflow.actions.documentpicker.save", **parameters)
 
 
 def notify(*parts) -> dict:
@@ -335,6 +342,25 @@ def build_shortcut(registry: PublicationRegistry, destination: str) -> dict:
     return workflow
 
 
+def build_asking_shortcut(destination: str) -> dict:
+    """Three actions, and it asks where to save.
+
+    The diagnostic variant. Every other shortcut here writes to a destination
+    it cannot verify; this one puts the result in front of you. If the picker
+    appears with a PDF in it, rendering works and only the destination is at
+    fault. If it does not, the problem is earlier than the save.
+
+    It is also a perfectly good everyday shortcut for anyone who would rather
+    tap a folder than trust a subpath.
+    """
+    workflow = build_simple_shortcut(destination)
+    workflow["WFWorkflowActions"] = [
+        make_pdf(shortcut_input()),
+        save_file(destination, ask=True),
+    ]
+    return workflow
+
+
 def build_simple_shortcut(destination: str) -> dict:
     """A three-action fallback: render, save, confirm.
 
@@ -398,9 +424,14 @@ def main(argv: list[str] | None = None) -> int:
     simple_target = out_dir / f"{args.name} (Simple).shortcut"
     simple_target.write_bytes(plistlib.dumps(simple, fmt=plistlib.FMT_BINARY))
 
+    asking = build_asking_shortcut(destination)
+    asking_target = out_dir / f"{args.name} (Ask).shortcut"
+    asking_target.write_bytes(plistlib.dumps(asking, fmt=plistlib.FMT_BINARY))
+
     print(f"wrote {target}  ({len(workflow['WFWorkflowActions'])} actions)")
     print(f"wrote {readable}  (readable copy)")
     print(f"wrote {simple_target}  ({len(simple['WFWorkflowActions'])} actions, fallback)")
+    print(f"wrote {asking_target}  ({len(asking['WFWorkflowActions'])} actions, asks where to save)")
     print(f"save destination: {destination}")
     print(f"publications:     {len(registry)}")
     print()
