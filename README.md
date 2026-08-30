@@ -179,6 +179,17 @@ than the current hoops:
 `docs/PAYWALLS.md` goes through which publication behaves which way, and how to
 tell within a second or two which route you are on.
 
+## Reaching it in one keystroke
+
+A Shortcut is not in Safari's Share menu until you enable it as a share
+extension, and digging it out of the Shortcuts app each time is no better than
+the hoops you started with. Give it a keyboard shortcut instead: Shortcuts app
+→ select **File Article** → details pane → **Add Keyboard Shortcut** → ⌃⌥⌘F.
+
+One keystroke on any Safari page, and the article is filed. See
+[`docs/SETUP-MAC.md`](docs/SETUP-MAC.md) for the Share-menu and Services
+routes if you prefer a menu.
+
 ## Checking what you filed
 
 ```bash

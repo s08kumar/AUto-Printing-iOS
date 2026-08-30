@@ -76,6 +76,33 @@ menu and in the Services menu of any app.
 Safari on the Mac is the best route of all: you are signed in to your
 subscriptions, so what gets rendered is the real article.
 
+## Reaching it quickly
+
+A Shortcut is not in Safari's Share menu by default, and hunting for it in the
+Shortcuts app every time defeats the purpose. In rough order of how little
+effort each costs you:
+
+**A keyboard shortcut — best.** In the Shortcuts app, select **File Article**,
+open the details pane on the right (⌘⌥1 if it is hidden), and click **Add
+Keyboard Shortcut**. Press something free, such as ⌃⌥⌘F. From then on, one
+keystroke on any Safari page files the article. No menus at all.
+
+**In the Share menu.** Safari's Share menu only lists share extensions you
+have enabled. Click **Edit Extensions…** at the bottom of that menu — or go to
+System Settings → **Privacy & Security → Extensions → Sharing** — and tick
+**File Article**. It then appears in the dropdown alongside AirDrop and
+Messages.
+
+**In the Services menu.** With **Use as Quick Action → Services Menu** ticked
+in the shortcut's details, it appears under **Safari → Services**, and in the
+right-click menu on a selection.
+
+**In the menu bar.** Tick **Pin in Menu Bar** in the details pane, and it sits
+in the Shortcuts menu-bar icon, one click from anywhere.
+
+The keyboard shortcut is the one worth setting up. The others are there for
+when your hands are already on the mouse.
+
 ## Watching what it does
 
 ```bash
