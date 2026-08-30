@@ -66,6 +66,39 @@ class Decision:
         return self.publication is not None
 
 
+_SLUG_NOISE_RE = re.compile(r"\.(?:html?|php|aspx?|cms|ece)$", re.IGNORECASE)
+_SLUG_ID_RE = re.compile(r"^(?:\d+|[0-9a-f]{8,}|index|amp|story|article)$", re.IGNORECASE)
+
+
+def title_from_url(url: str) -> str:
+    """Recover a readable headline from an article URL's slug.
+
+    Make PDF produces a file with no title, so the URL is often the only thing
+    naming the piece:
+    ".../2026/08/30/world/asia/nepal-floods.html" -> "Nepal Floods".
+
+    >>> title_from_url("https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html")
+    'Nepal Floods'
+    >>> title_from_url("https://www.wsj.com/")
+    ''
+    """
+    if not url:
+        return ""
+    path = url.split("://", 1)[-1].split("/", 1)
+    if len(path) < 2:
+        return ""
+    segments = [s for s in path[1].split("?")[0].split("#")[0].split("/") if s]
+    for segment in reversed(segments):
+        segment = _SLUG_NOISE_RE.sub("", segment)
+        if not segment or _SLUG_ID_RE.match(segment):
+            continue
+        words = [w for w in re.split(r"[-_+]+", segment) if w and not w.isdigit()]
+        if len(words) < 2:  # a single word is rarely the headline
+            continue
+        return " ".join(word[:1].upper() + word[1:] for word in words)
+    return ""
+
+
 def read_sidecar(path: Path) -> Signals:
     """Read a `<name>.json` or `<name>.url.txt` companion written by the Shortcut.
 
@@ -170,7 +203,17 @@ def classify(
             title = candidate
     if not title:
         candidates = signals.candidate_titles()
-        title = candidates[0] if candidates else signals.filename_stem
+        if candidates:
+            title = candidates[0]
+        else:
+            # No headline anywhere: the URL slug beats a UUID, and a UUID
+            # beats nothing at all.
+            for url in signals.candidate_urls():
+                title = title_from_url(url)
+                if title:
+                    notes.append("headline recovered from the article URL")
+                    break
+            title = title or signals.filename_stem
 
     # Strip the publication's own name even when the URL identified it.
     if publication is not None and title:

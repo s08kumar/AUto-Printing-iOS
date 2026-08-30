@@ -189,3 +189,64 @@ class UuidFilenameTests(unittest.TestCase):
             Signals(filename_stem="Why 60357F89 matters - WSJ"), self.registry
         )
         self.assertEqual(decision.filename, "WSJ - Why 60357F89 matters.pdf")
+
+
+class UrlSlugTitleTests(unittest.TestCase):
+    """Make PDF gives the file no title at all, so the article URL embedded in
+    it is often the only thing naming the piece."""
+
+    def setUp(self):
+        self.registry = PublicationRegistry.bundled()
+
+    def test_a_slug_becomes_a_headline(self):
+        from articlefiler.classify import title_from_url
+
+        self.assertEqual(
+            title_from_url("https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html"),
+            "Nepal Floods",
+        )
+
+    def test_it_skips_identifier_segments(self):
+        from articlefiler.classify import title_from_url
+
+        self.assertEqual(
+            title_from_url("https://www.wsj.com/articles/fed-holds-rates-steady/index.html"),
+            "Fed Holds Rates Steady",
+        )
+
+    def test_a_bare_domain_yields_nothing(self):
+        from articlefiler.classify import title_from_url
+
+        self.assertEqual(title_from_url("https://www.wsj.com/"), "")
+
+    def test_a_single_word_slug_is_not_treated_as_a_headline(self):
+        from articlefiler.classify import title_from_url
+
+        self.assertEqual(title_from_url("https://www.ft.com/markets"), "")
+
+    def test_query_and_fragment_are_ignored(self):
+        from articlefiler.classify import title_from_url
+
+        self.assertEqual(
+            title_from_url("https://hbr.org/2026/01/leading-in-a-crisis?utm=x#top"),
+            "Leading In A Crisis",
+        )
+
+    def test_a_uuid_named_pdf_is_named_from_its_embedded_url(self):
+        decision = classify(
+            Signals(filename_stem="72236488-6421-44E8-957D-1B50BC213DBD",
+                    metadata_urls=("https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html",)),
+            self.registry,
+        )
+        self.assertEqual(decision.filename, "NYT - Nepal Floods.pdf")
+        self.assertTrue(any("recovered from the article URL" in n for n in decision.notes))
+
+    def test_a_real_title_still_wins_over_the_slug(self):
+        decision = classify(
+            Signals(filename_stem="72236488-6421-44E8-957D-1B50BC213DBD",
+                    metadata_title="What to Know About Deadly Flash Floods",
+                    metadata_urls=("https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html",)),
+            self.registry,
+        )
+        self.assertEqual(decision.filename,
+                         "NYT - What to Know About Deadly Flash Floods.pdf")

@@ -274,6 +274,64 @@ def cmd_verify(args) -> int:
     return 0
 
 
+def cmd_explain(args) -> int:
+    """Show every signal a file offers, and how the name was decided.
+
+    When a file comes out named wrongly, the question is always which signals
+    were actually present. This answers it rather than inviting speculation.
+    """
+    from .filer import gather_signals
+    from .pdfmeta import read_pdf_metadata, read_spotlight_metadata
+
+    config, registry = _load(args)
+    for raw in args.paths:
+        path = Path(raw).expanduser()
+        print(f"=== {path.name}")
+        if not path.is_file():
+            print("  not a file")
+            continue
+        print(f"  size: {path.stat().st_size:,} bytes")
+
+        if path.suffix.lower() == ".pdf":
+            meta = read_pdf_metadata(path)
+            print(f"  PDF /Title    : {meta.title or '(none)'}")
+            print(f"  PDF /Subject  : {meta.subject or '(none)'}")
+            print(f"  PDF /Keywords : {meta.keywords or '(none)'}")
+            if meta.urls:
+                print(f"  URLs found    : {len(meta.urls)}")
+                for url in meta.urls[:8]:
+                    print(f"      {url[:100]}")
+            else:
+                print("  URLs found    : (none)")
+            spotlight = read_spotlight_metadata(path)
+            if spotlight.title or spotlight.urls:
+                print(f"  Spotlight     : title={spotlight.title or '(none)'} "
+                      f"urls={list(spotlight.urls[:3]) or '(none)'}")
+
+        signals = gather_signals(path, config)
+        print(f"  filename stem : {signals.filename_stem}")
+        print(f"  candidates    : {signals.candidate_titles() or '(none usable)'}")
+
+        decision = classify(
+            signals, registry,
+            extension=path.suffix.lower(),
+            template=config.template,
+            max_title_length=config.max_title_length,
+            fallback_acronym=config.fallback_acronym,
+        )
+        print(f"  -> publication: {decision.publication.name if decision.publication else '(unknown)'}")
+        print(f"  -> decided by : {decision.source}")
+        print(f"  -> filename   : {decision.filename}")
+        for note in decision.notes:
+            print(f"     note: {note}")
+        if decision.source == "unknown":
+            print()
+            print("  Nothing in this PDF names the article. Make PDF produces a file")
+            print("  with no title and no metadata, so the Shortcut has to supply the")
+            print("  name — add a Set Name action before Save File.")
+    return 0
+
+
 def cmd_selftest(args) -> int:
     """Prove the Mac half end to end, with a real file, and clean up after.
 
@@ -467,6 +525,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--hours", type=float, default=24, help="how far back to look")
     p.add_argument("--limit", type=int, default=25)
     p.set_defaults(func=cmd_locate)
+
+    p = sub.add_parser("explain", help="show what signals a file offers, and why")
+    p.add_argument("paths", nargs="+")
+    p.set_defaults(func=cmd_explain)
 
     p = sub.add_parser("selftest", help="prove the Mac side works, end to end")
     p.set_defaults(func=cmd_selftest)
