@@ -276,3 +276,35 @@ class LoggingTests(unittest.TestCase):
                            if type(h) is logging.StreamHandler]
                 self.assertEqual(len(streams), 1, "interactive runs should still echo")
         logging.getLogger().handlers.clear()
+
+
+class ShortcutsFolderTests(FilerTestCase):
+    """The Save File action takes a subpath resolved against a base we cannot
+    set, so files land in the Shortcuts folder. Watching there too avoids
+    binding every device by hand through the folder picker."""
+
+    def test_the_shortcuts_folder_is_watched(self):
+        names = [p.name for p in self.config.inbox_paths]
+        self.assertIn("_Inbox", names)
+        self.assertTrue(any("Shortcuts" in str(p) for p in self.config.inbox_paths))
+
+    def test_files_are_drained_from_an_extra_inbox(self):
+        extra = Path(self._tmp.name) / "Shortcuts" / "Articles"
+        extra.mkdir(parents=True)
+        (extra / "Grid storage - The Economist.pdf").write_bytes(b"%PDF-1.7\n")
+        self.config.extra_inboxes = (str(extra),)
+
+        plans = process_inbox(self.config, self.registry, settle=False)
+        self.assertEqual([p.action for p in plans], ["move"])
+        self.assertTrue((self.library / "Economist - Grid storage.pdf").is_file())
+        self.assertEqual(list(extra.iterdir()), [])
+
+    def test_inbox_paths_are_deduplicated(self):
+        self.config.extra_inboxes = (str(self.inbox),)
+        self.assertEqual(len(self.config.inbox_paths), len(set(self.config.inbox_paths)))
+
+    def test_one_unreadable_inbox_does_not_block_the_others(self):
+        self.config.extra_inboxes = ("/root/definitely-not-readable-xyz",)
+        (self.inbox / "Markets wobble - WSJ.pdf").write_bytes(b"%PDF-1.7\n")
+        plans = process_inbox(self.config, self.registry, settle=False)
+        self.assertEqual([p.action for p in plans], ["move"])

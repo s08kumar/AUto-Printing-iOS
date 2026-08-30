@@ -66,6 +66,7 @@ class Config:
     log_path: str = ""
     resolve_redirects: bool = True  # follow apple.news / bit.ly to find the publisher
     network_timeout: float = 8.0
+    extra_inboxes: tuple[str, ...] = ()  # watched in addition to the ones below
 
     # -- derived --------------------------------------------------------
 
@@ -78,6 +79,30 @@ class Config:
         if self.inbox:
             return Path(self.inbox).expanduser()
         return self.library_path / INBOX_NAME
+
+    @property
+    def shortcuts_inbox_paths(self) -> list[Path]:
+        """Where the Shortcuts app actually writes.
+
+        The Save File action takes a *subpath*, resolved against a base this
+        tool cannot set — in practice the Shortcuts folder in iCloud Drive. So
+        rather than requiring every device to be bound by hand through the
+        folder picker, we simply also watch where the files really land.
+        """
+        base = ICLOUD_ROOT / "Shortcuts" / self.library_path.name
+        return [base, base / INBOX_NAME]
+
+    @property
+    def inbox_paths(self) -> list[Path]:
+        """Every folder the watcher should drain, in priority order."""
+        paths = [self.inbox_path]
+        paths.extend(self.shortcuts_inbox_paths)
+        paths.extend(Path(p).expanduser() for p in self.extra_inboxes)
+        seen: list[Path] = []
+        for path in paths:
+            if path not in seen:
+                seen.append(path)
+        return seen
 
     @property
     def log_file(self) -> Path:
@@ -107,6 +132,8 @@ class Config:
     def from_dict(cls, raw: dict) -> "Config":
         known = {f for f in cls.__dataclass_fields__}
         data = {k: v for k, v in raw.items() if k in known}
+        if "extra_inboxes" in data:
+            data["extra_inboxes"] = tuple(data["extra_inboxes"])
         if "extensions" in data:
             data["extensions"] = tuple(
                 e if e.startswith(".") else "." + e for e in data["extensions"]
@@ -128,6 +155,7 @@ class Config:
     def to_dict(self) -> dict:
         data = asdict(self)
         data["extensions"] = list(self.extensions)
+        data["extra_inboxes"] = list(self.extra_inboxes)
         return data
 
     def save(self, path: Path | None = None) -> Path:

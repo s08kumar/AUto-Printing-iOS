@@ -86,7 +86,8 @@ class Watcher:
     def run(self) -> None:
         self.config.inbox_path.mkdir(parents=True, exist_ok=True)
         self.config.library_path.mkdir(parents=True, exist_ok=True)
-        log.info("watching %s", self.config.inbox_path)
+        for inbox in self.config.inbox_paths:
+            log.info("watching %s", inbox)
         log.info("filing into %s", self.config.library_path)
         while self._running:
             self.tick()

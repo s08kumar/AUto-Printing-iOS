@@ -204,14 +204,18 @@ class AccessDenied(OSError):
 
 
 def iter_inbox(config: Config) -> list[Path]:
-    """Fileable entries sitting in the inbox, oldest first."""
-    inbox = config.inbox_path
-    if not inbox.is_dir():
-        return []
-    try:
-        entries = [p for p in inbox.iterdir() if p.is_file()]
-    except PermissionError as error:
-        raise AccessDenied(f"permission denied listing: {inbox}") from error
+    """Fileable entries across every watched inbox, oldest first."""
+    entries: list[Path] = []
+    denied: Path | None = None
+    for inbox in config.inbox_paths:
+        if not inbox.is_dir():
+            continue
+        try:
+            entries.extend(p for p in inbox.iterdir() if p.is_file())
+        except PermissionError:
+            denied = denied or inbox
+    if denied is not None and not entries:
+        raise AccessDenied(f"permission denied listing: {denied}")
     entries.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0)
     return entries
 

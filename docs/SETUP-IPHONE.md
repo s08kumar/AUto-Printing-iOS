@@ -89,11 +89,18 @@ syncs.
 publication.
 
 **It says it filed the article, but the folder is empty.** The file is not
-lost — the Save File action resolved to a different folder, usually
-`iCloud Drive/Shortcuts/`. On the Mac, `python3 -m articlefiler locate` finds
-it. The fix is to open the Shortcut, tap the **Save File** action, and re-pick
-the destination folder through the picker: choosing it by hand records the
-storage location properly, which a typed path does not.
+lost. The Save File action takes a *subpath*, resolved against a base that
+cannot be set from a generated shortcut, so articles land in
+`iCloud Drive/Shortcuts/NYT-WSJ-Mckinsey-HBR-Economist Articles/`.
+
+This is handled: the Mac watcher drains that folder too, and moves the
+articles into the real library. `python3 -m articlefiler doctor` lists every
+folder it watches.
+
+If you want the iPhone to write straight to the library without waiting for
+the Mac, bind it by hand once per device: edit the Shortcut, tap the **Save
+File** action's destination, and pick the folder through the picker. Choosing
+it that way records the location properly, which a typed subpath cannot.
 
 **Everything lands in `_Inbox` instead of the main folder.** That is the Save
 File destination pointing one level too deep. Open the Shortcut, tap **Save

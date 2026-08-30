@@ -41,6 +41,19 @@ The two halves share one publication registry
 (`articlefiler/data/publications.json`), so the acronym your iPhone picks is the
 acronym your Mac agrees with. Add a publication once and both sides learn it.
 
+### Where the iPhone actually writes
+
+The Save File action takes a *subpath*, resolved against a base a generated
+shortcut cannot set, so articles from the phone land in
+`iCloud Drive/Shortcuts/<library name>/` rather than the library itself. The
+Mac watcher drains that folder as well and moves them home, so this needs no
+attention — but it is why the Mac half is worth installing even though the
+Shortcut names files correctly on its own.
+
+To skip the round trip, bind the destination by hand once per device: edit the
+Shortcut, tap the Save File destination, and choose the folder through the
+picker.
+
 ### Why there is a Mac half at all
 
 The Shortcut handles the common case. The Mac watcher is the safety net for

@@ -224,6 +224,9 @@ def cmd_doctor(args) -> int:
           f"library missing: {config.library_path}")
     check(config.inbox_path.is_dir(), f"inbox {config.inbox_path}",
           f"inbox missing: {config.inbox_path}")
+    for extra in config.inbox_paths[1:]:
+        state = "exists" if extra.is_dir() else "not created yet"
+        print(f"  INFO  also watching: {extra}  ({state})")
     icloud = "com~apple~CloudDocs" in str(config.library_path)
     check(icloud, "library is inside iCloud Drive",
           "library is not inside iCloud Drive — it will not sync to your iPhone")
