@@ -16,7 +16,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .pdfmeta import _inflate_streams
+from .pdfmeta import _inflate_streams, read_scan_window
 
 # Judging a PDF needs a sample, not the whole thing. These caps keep a
 # 40-file library under a second instead of appearing to hang.
@@ -110,8 +110,7 @@ def inspect(path: Path) -> PdfReport:
     report = PdfReport(path=path)
     try:
         report.size = path.stat().st_size
-        with path.open("rb") as handle:
-            raw = handle.read(MAX_READ_BYTES)
+        raw = read_scan_window(path)[:MAX_READ_BYTES * 2]
     except OSError:
         report.readable = False
         report.reasons.append("could not be read")

@@ -111,3 +111,56 @@ class ReadMetadataTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LargeFileScanTests(unittest.TestCase):
+    """A PDF's Info dictionary, xref and link annotations are written at the
+    end. Sampling only the head of a large capture finds nothing at all, which
+    is indistinguishable from a PDF that genuinely carries no metadata."""
+
+    def setUp(self):
+        self._tmp = TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def large_pdf(self, name: str, tail: bytes, padding: int = 9 * 1024 * 1024) -> Path:
+        path = self.tmp / name
+        with path.open("wb") as handle:
+            handle.write(b"%PDF-1.7\n")
+            handle.write(b"\x00" * padding)
+            handle.write(tail)
+        return path
+
+    def test_urls_at_the_end_of_a_large_pdf_are_found(self):
+        path = self.large_pdf(
+            "big.pdf",
+            b"\n<< /URI (https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html) >>\n"
+            b"%%EOF\n",
+        )
+        self.assertGreater(path.stat().st_size, 9_000_000)
+        meta = read_pdf_metadata(path)
+        self.assertIn("https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html", meta.urls)
+
+    def test_a_title_at_the_end_of_a_large_pdf_is_found(self):
+        path = self.large_pdf(
+            "big2.pdf",
+            b"\n1 0 obj\n<< /Title (Nepal Floods - The New York Times) >>\nendobj\n"
+            b"trailer\n<< /Info 1 0 R >>\n%%EOF\n",
+        )
+        self.assertEqual(read_pdf_metadata(path).title, "Nepal Floods - The New York Times")
+
+    def test_the_scan_window_is_bounded(self):
+        from articlefiler.pdfmeta import MAX_SCAN_BYTES, read_scan_window
+
+        path = self.large_pdf("big3.pdf", b"%%EOF\n", padding=30 * 1024 * 1024)
+        window = read_scan_window(path)
+        self.assertLessEqual(len(window), MAX_SCAN_BYTES + 1)
+
+    def test_a_small_file_is_read_whole(self):
+        from articlefiler.pdfmeta import read_scan_window
+
+        path = self.tmp / "small.pdf"
+        path.write_bytes(b"%PDF-1.7\n" + b"x" * 1000 + b"\n%%EOF\n")
+        self.assertEqual(len(read_scan_window(path)), path.stat().st_size)

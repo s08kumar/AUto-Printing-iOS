@@ -13,8 +13,8 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
-MAX_SCAN_BYTES = 8 * 1024 * 1024  # metadata lives near the ends; 8 MB is plenty
-MAX_STREAMS = 400
+MAX_SCAN_BYTES = 8 * 1024 * 1024  # total bytes sampled from a file
+MAX_STREAMS = 800
 
 _INFO_KEY_RE = {
     "title": rb"/Title\s*",
@@ -192,11 +192,30 @@ def _collect_urls(data: bytes) -> list[str]:
     return [url for url, _ in ordered]
 
 
+def read_scan_window(path: Path) -> bytes:
+    """Bytes worth searching: the head, and — for a large file — the tail too.
+
+    A PDF's information dictionary, cross-reference table and link annotations
+    are written at the *end*. Reading only the first N bytes of a 9 MB capture
+    therefore finds no title and no URLs at all, which looks exactly like a PDF
+    that contains neither.
+    """
+    path = Path(path)
+    size = path.stat().st_size
+    with path.open("rb") as handle:
+        if size <= MAX_SCAN_BYTES:
+            return handle.read()
+        half = MAX_SCAN_BYTES // 2
+        head = handle.read(half)
+        handle.seek(size - half)
+        return head + b"\n" + handle.read(half)
+
+
 def read_pdf_metadata(path: Path) -> PdfMetadata:
     """Read title/subject/keywords/URLs out of a PDF. Never raises."""
     path = Path(path)
     try:
-        raw = path.read_bytes()[:MAX_SCAN_BYTES]
+        raw = read_scan_window(path)
     except OSError:
         return PdfMetadata()
     if not raw.startswith(b"%PDF"):
