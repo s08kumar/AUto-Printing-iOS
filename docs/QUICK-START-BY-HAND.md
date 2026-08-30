@@ -34,6 +34,21 @@ that one thing cannot.
    Text.
 6. Done.
 
+## If you add a Set Name action
+
+Optional — the Mac can name the file on its own — but it gets you the right
+name immediately.
+
+Put **Set Name** between Make PDF and Save File, and in its Name field insert
+a variable. The trap is *which* variable: the chip reads `Name` whether it
+refers to the Shortcut Input or to the PDF, and they look identical.
+
+- **Shortcut Input → Name** is the page title. Correct.
+- **PDF → Name** is the name of the file Make PDF just produced, which has
+  none — so it is a UUID, and you end up setting the name to itself.
+
+Click the chip to see which one it is bound to, and switch it if needed.
+
 ## Building it on the Mac instead
 
 Easier than on the phone, and it syncs to the iPhone afterwards.
