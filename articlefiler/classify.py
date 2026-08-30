@@ -12,7 +12,13 @@ from .titles import build_filename, clean_title, split_prefixed, strip_copy_suff
 
 # Titles that a PDF producer invented rather than a headline anyone wrote.
 _JUNK_TITLE_RE = re.compile(
-    r"^(?:untitled|document\d*|print|microsoft word\s*-.*|.*\.(?:docx?|indd|pages|rtf|html?))$",
+    r"^(?:"
+    r"untitled|document\d*|print|microsoft word\s*-.*"
+    # Shortcuts' Make PDF emits an unnamed file, so Save File falls back to a
+    # UUID. That is an identifier, not a headline.
+    r"|[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}"
+    r"|.*\.(?:docx?|indd|pages|rtf|html?)"
+    r")$",
     re.IGNORECASE,
 )
 
@@ -162,8 +168,9 @@ def classify(
                 break
         if not title:
             title = candidate
-    if not title and signals.candidate_titles():
-        title = signals.candidate_titles()[0]
+    if not title:
+        candidates = signals.candidate_titles()
+        title = candidates[0] if candidates else signals.filename_stem
 
     # Strip the publication's own name even when the URL identified it.
     if publication is not None and title:

@@ -142,3 +142,50 @@ class ClassifyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UuidFilenameTests(unittest.TestCase):
+    """Shortcuts' Make PDF emits an unnamed file, so Save File falls back to a
+    UUID. That is an identifier, not a headline, and must not be filed as one."""
+
+    def setUp(self):
+        self.registry = PublicationRegistry.bundled()
+        self.uuid = "60357F89-77FB-4575-8C97-A16D70C8DD7F"
+
+    def test_a_url_inside_the_pdf_beats_the_uuid(self):
+        decision = classify(
+            Signals(filename_stem=self.uuid,
+                    metadata_urls=("https://www.nytimes.com/2026/08/30/world/x.html",),
+                    metadata_title="What to Know About Deadly Flash Floods"),
+            self.registry,
+        )
+        self.assertEqual(decision.filename,
+                         "NYT - What to Know About Deadly Flash Floods.pdf")
+
+    def test_a_metadata_title_beats_the_uuid(self):
+        decision = classify(
+            Signals(filename_stem=self.uuid,
+                    metadata_title="Grid storage explained - The Economist"),
+            self.registry,
+        )
+        self.assertEqual(decision.filename, "Economist - Grid storage explained.pdf")
+
+    def test_with_nothing_else_the_uuid_is_kept(self):
+        # Better a stable identifier than every such file colliding on
+        # "Untitled article".
+        decision = classify(Signals(filename_stem=self.uuid), self.registry)
+        self.assertEqual(decision.filename, f"{self.uuid}.pdf")
+
+    def test_lowercase_uuids_are_recognised_too(self):
+        decision = classify(
+            Signals(filename_stem=self.uuid.lower(),
+                    metadata_title="Markets wobble - WSJ"),
+            self.registry,
+        )
+        self.assertEqual(decision.filename, "WSJ - Markets wobble.pdf")
+
+    def test_a_headline_that_merely_contains_hex_is_not_junk(self):
+        decision = classify(
+            Signals(filename_stem="Why 60357F89 matters - WSJ"), self.registry
+        )
+        self.assertEqual(decision.filename, "WSJ - Why 60357F89 matters.pdf")
