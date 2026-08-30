@@ -89,6 +89,17 @@ Once** means answering again every time.
 Until you answer, the Shortcut waits, which is indistinguishable from it
 having stalled.
 
+## Safari's own PDF export
+
+The most reliable route on iOS, and the equivalent of Export as PDF on the
+Mac:
+
+> Share → **Options ›** (just under the page title) → **PDF** →
+> **Save to Files** → `_Inbox`
+
+The PDF is the page Safari already rendered, named after its title. The
+watcher does the rest. Prefer this whenever a Shortcut misbehaves.
+
 ## Using it
 
 **Any article, any app**: Share → **File Article**. A notification confirms the

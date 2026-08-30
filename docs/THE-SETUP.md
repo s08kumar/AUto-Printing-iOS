@@ -22,10 +22,23 @@ Then, on any article: **⌘⇧P**, **Return** (the dialog remembers `_Inbox`).
 Do not use a Shortcut here. Its Make PDF action re-renders the page in a
 sandboxed web view and can stall indefinitely on a heavy news site.
 
-## iPhone: a three-action Shortcut
+## iPhone, the reliable route: Safari's own export
 
-There is no Export as PDF on iOS, so Make PDF is unavoidable — but the name
-must be supplied explicitly, or you get a UUID.
+iOS has the equivalent of the Mac's Export as PDF, and it is worth preferring
+for the same reason:
+
+> Share → **Options ›** (under the page title) → **PDF** → **Save to Files** →
+> `_Inbox`
+
+Safari hands over the page it has already rendered, named after its title, so
+there is no Make PDF to stall and no name to reconstruct. A few more taps than
+a Shortcut, and it cannot fail the way a generated capture can.
+
+## iPhone, the one-tap route: a three-action Shortcut
+
+Fewer taps, but it depends on Make PDF, which stalls on heavy pages — that is
+what defeated it on the Mac. Worth trying; fall back to the route above if it
+misbehaves.
 
 Build it on the Mac (easier to see what you are doing) and let iCloud sync it
 across.
@@ -41,10 +54,17 @@ and Text all ticked.
 
 ### The two settings that decide whether this works
 
-**Action 2's variable.** The chip reads `Name` whether it refers to the
-Shortcut Input or to the PDF, and they look identical. Shortcut Input's Name is
-the page title; the PDF's Name is what Make PDF just produced, which is a UUID
-— so binding it there sets the name to itself. Click the chip and check.
+**Action 2 has two slots, and they are easy to swap.** It reads *Set name **of
+X** to **Y***: `X` is the file being renamed, `Y` is the new name. It must be:
+
+> Set name **of `PDF`** to **`Shortcut Input → Name`**
+
+- **of** must be the **PDF** — the Make PDF output. Set it to Shortcut Input
+  and you rename the web page item instead, and the PDF keeps its UUID.
+- **to** must be the **Shortcut Input's Name** property — the page title. The
+  chip reads `Name` whether it refers to the Shortcut Input or to the PDF, and
+  the PDF's name is the UUID Make PDF just assigned, so binding it there sets
+  the name to itself.
 
 **Action 3's destination.** It arrives set to `Shortcuts` with a separate
 *Subpath* field below. Subpath is a path *inside* the destination, not a place
