@@ -16,6 +16,10 @@ that one thing cannot.
    - Set its input to **Shortcut Input** (tap the input field if it does not
      say that already).
 3. Tap **Add Action**, search **Save File**, add it.
+   - It arrives reading **Save PDF to `Shortcuts`**. That word `Shortcuts` is
+     the destination folder, and it is the default — leaving it there is what
+     sends articles somewhere you will not find them. Click it and pick your
+     folder.
    - Turn **Ask Where to Save** **off**.
    - Tap the destination and pick, through the picker:
      **iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist Articles → _Inbox**

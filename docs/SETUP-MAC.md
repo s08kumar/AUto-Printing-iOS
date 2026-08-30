@@ -175,6 +175,20 @@ place:
 make shortcut && ./shortcut/sign.sh 'build/File Article.shortcut'
 ```
 
+## Check what the Save action actually says
+
+In the Shortcuts editor, a freshly added Save File action reads:
+
+> Save `PDF` to `Shortcuts`
+
+`Shortcuts` there is the destination folder, not a label. Left alone, articles
+go to a default folder rather than your library. Click that word, pick
+**iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist Articles → _Inbox** through the
+picker, and expand the action with its chevron to confirm **Ask Where to Save**
+is off. It should then read `Save PDF to _Inbox`.
+
+This is worth checking whenever a shortcut reports success and nothing appears.
+
 ## The first run asks permission
 
 The first time the Shortcut runs on a given site, macOS asks:
