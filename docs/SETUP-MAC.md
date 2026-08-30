@@ -175,19 +175,33 @@ place:
 make shortcut && ./shortcut/sign.sh 'build/File Article.shortcut'
 ```
 
-## Check what the Save action actually says
+## Destination and Subpath are two different things
 
-In the Shortcuts editor, a freshly added Save File action reads:
+Expand the Save File action and it shows:
 
 > Save `PDF` to `Shortcuts`
+> - Ask Where To Save
+> - Subpath:
+> - Overwrite If File Exists
 
-`Shortcuts` there is the destination folder, not a label. Left alone, articles
-go to a default folder rather than your library. Click that word, pick
-**iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist Articles → _Inbox** through the
-picker, and expand the action with its chevron to confirm **Ask Where to Save**
-is off. It should then read `Save PDF to _Inbox`.
+The button in the first line is the **destination folder**, and it arrives set
+to `Shortcuts`. **Subpath** is an extra relative path *inside* that
+destination — not a place to type where you want the file to go.
 
-This is worth checking whenever a shortcut reports success and nothing appears.
+Typing a path into Subpath is the trap. `Shortcuts` + a subpath of
+`iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist` asks to save into a folder
+called "iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist" inside the Shortcuts
+folder — arrow character included. Nothing exists there, nothing is created,
+and the run reports success.
+
+Set it up as:
+
+1. Click the destination button (`Shortcuts`) and pick, through the picker,
+   **iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist Articles → _Inbox**.
+2. Leave **Subpath empty**.
+3. Leave **Ask Where To Save** off.
+
+It should then read `Save PDF to _Inbox` with Subpath blank.
 
 ## The first run asks permission
 

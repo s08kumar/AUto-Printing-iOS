@@ -16,10 +16,14 @@ that one thing cannot.
    - Set its input to **Shortcut Input** (tap the input field if it does not
      say that already).
 3. Tap **Add Action**, search **Save File**, add it.
-   - It arrives reading **Save PDF to `Shortcuts`**. That word `Shortcuts` is
-     the destination folder, and it is the default — leaving it there is what
-     sends articles somewhere you will not find them. Click it and pick your
-     folder.
+   - It arrives reading **Save PDF to `Shortcuts`**. That word is the
+     destination folder, and it is the default. Click it and pick your folder
+     through the picker.
+   - Expanding the action also reveals **Subpath**. That is a relative path
+     *inside* the destination, not a place to type where the file should go.
+     Leave it empty. Typing a path there — especially one copied from a Finder
+     breadcrumb, arrows and all — asks for a folder that cannot exist, and the
+     save silently does nothing.
    - Turn **Ask Where to Save** **off**.
    - Tap the destination and pick, through the picker:
      **iCloud Drive → NYT-WSJ-Mckinsey-HBR-Economist Articles → _Inbox**
