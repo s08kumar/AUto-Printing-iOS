@@ -81,13 +81,25 @@ make shortcut                 # builds "build/File Article.shortcut"
 ```
 
 Double-click the signed file to add the Shortcut to the Mac, then AirDrop it to
-the iPhone — or just let iCloud sync carry it across.
+the iPhone — or just let iCloud sync carry it across. Check its **Save File**
+destination once it arrives, and re-pick the folder through the picker.
 
-### On the iPhone (1 minute, once)
+### On the iPhone (2 minutes, once)
 
-1. **Shortcuts → File Article → ⓘ → Show in Share Sheet** — on.
-2. Open any article, tap **Share**, scroll to **File Article**, tap it once.
-3. iOS asks for permission to save to that folder the first time. Allow it.
+Build the Shortcut by hand — it is two actions, and it is the reliable route:
+
+1. **Shortcuts → + → Add Action → Make PDF**, input: **Shortcut Input**.
+2. **Add Action → Save File**. Turn **Ask Where to Save** off, then tap the
+   destination and pick your `_Inbox` folder **through the picker**.
+3. Name it **File Article**, then **ⓘ → Show in Share Sheet** on.
+
+Full walkthrough: [`docs/QUICK-START-BY-HAND.md`](docs/QUICK-START-BY-HAND.md).
+
+A Save File destination cannot be written into a generated shortcut file — it
+has to be chosen through the picker on the device. The generated shortcuts in
+`build/` are still useful as a starting point for the naming logic, but this
+two-action version is what gets you working today, because the Mac does the
+naming anyway.
 
 From then on it is one tap. If you use it often, long-press **File Article** in
 the Share sheet and drag it to the top so it is always the first thing you see.
