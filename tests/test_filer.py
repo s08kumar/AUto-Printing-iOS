@@ -398,3 +398,31 @@ class LandingFolderTests(unittest.TestCase):
         config = Config(library="/tmp/My Articles")
         self.assertTrue(all(p.name in ("My Articles", "_Inbox")
                             for p in config.shortcuts_inbox_paths))
+
+
+class SelfTestTests(FilerTestCase):
+    def test_it_passes_on_a_healthy_setup(self):
+        from articlefiler.cli import main
+
+        with TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "config.json"
+            self.config.save(config_path)
+            self.assertEqual(main(["--config", str(config_path), "selftest"]), 0)
+
+    def test_it_leaves_no_trace(self):
+        from articlefiler.cli import main
+
+        with TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "config.json"
+            self.config.save(config_path)
+            main(["--config", str(config_path), "selftest"])
+        self.assertEqual(list(self.library.glob("*.pdf")), [])
+        self.assertEqual(list(self.inbox.glob("*")), [])
+
+    def test_it_fails_when_the_library_is_missing(self):
+        from articlefiler.cli import main
+
+        with TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "config.json"
+            Config(library=str(Path(tmp) / "nope")).save(config_path)
+            self.assertEqual(main(["--config", str(config_path), "selftest"]), 1)

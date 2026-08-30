@@ -264,6 +264,88 @@ def cmd_verify(args) -> int:
     return 0
 
 
+def cmd_selftest(args) -> int:
+    """Prove the Mac half end to end, with a real file, and clean up after.
+
+    Every step that has bitten us in setup gets checked here in order, so a
+    failure names the link that broke rather than leaving it to be inferred.
+    """
+    config, registry = _load(args)
+    steps: list[tuple[str, bool, str]] = []
+
+    def step(name: str, ok: bool, detail: str = "") -> bool:
+        steps.append((name, ok, detail))
+        print(f"  {'PASS' if ok else 'FAIL'}  {name}" + (f"  — {detail}" if detail else ""))
+        return ok
+
+    print("article-filer self-test")
+    print(f"  library: {config.library_path}")
+    print()
+
+    if not step("library folder exists", config.library_path.is_dir(),
+                "" if config.library_path.is_dir() else "run: articlefiler init"):
+        return 1
+    if not step("inbox folder exists", config.inbox_path.is_dir(),
+                "" if config.inbox_path.is_dir() else "run: articlefiler init"):
+        return 1
+
+    problem = check_readable(config.inbox_path)
+    if not step("inbox is readable", problem is None, problem or ""):
+        print()
+        print(FULL_DISK_ACCESS_HELP)
+        return 1
+
+    # Only the iPhone needs this, so it must not fail a Mac-only self-test.
+    landing = [p for p in config.shortcuts_inbox_paths if p.is_dir()]
+    print(f"  {'INFO'}  iCloud Drive/Shortcuts landing folder: "
+          + ("present" if landing else "absent — only matters once the iPhone saves here"))
+
+    # A real file, through the real code path, with a name that exercises the
+    # publication lookup and the headline clean-up.
+    probe = config.inbox_path / "Self test- a headline with punctuation - WSJ.pdf"
+    expected = "WSJ - Self test- a headline with punctuation.pdf"
+    try:
+        probe.write_bytes(
+            b"%PDF-1.7\n1 0 obj\n<< /Title (Self test) >>\nendobj\n"
+            b"trailer\n<< /Info 1 0 R >>\n%%EOF\n"
+        )
+    except OSError as error:
+        step("can write to the inbox", False, str(error))
+        return 1
+    step("can write to the inbox", True)
+
+    try:
+        plans = process_inbox(config, registry, settle=False)
+    except Exception as error:  # noqa: BLE001 - report rather than traceback
+        step("filing runs without error", False, str(error))
+        probe.unlink(missing_ok=True)
+        return 1
+    step("filing runs without error", True)
+
+    filed = config.library_path / expected
+    ok = filed.is_file()
+    step(f"filed as {expected}", ok,
+         "" if ok else f"got: {[p.destination.name for p in plans] or 'nothing'}")
+
+    step("inbox was emptied", not probe.exists())
+
+    # Leave no trace: this is a test, not a filing.
+    filed.unlink(missing_ok=True)
+    probe.unlink(missing_ok=True)
+
+    failures = [name for name, passed, _ in steps if not passed]
+    print()
+    if failures:
+        print(f"{len(failures)} step(s) failed: {', '.join(failures)}")
+        return 1
+    print("All good. The Mac side works: drop a PDF in the inbox and it gets")
+    print("named and filed. Next, prove it with a real article —")
+    print("  Safari > File > Export as PDF > save into:")
+    print(f"    {config.inbox_path}")
+    print("  then: python3 -m articlefiler run --no-settle && python3 -m articlefiler verify")
+    return 0
+
+
 def cmd_doctor(args) -> int:
     config, registry = _load(args)
     problems = 0
@@ -375,6 +457,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--hours", type=float, default=24, help="how far back to look")
     p.add_argument("--limit", type=int, default=25)
     p.set_defaults(func=cmd_locate)
+
+    p = sub.add_parser("selftest", help="prove the Mac side works, end to end")
+    p.set_defaults(func=cmd_selftest)
 
     p = sub.add_parser("doctor", help="check the setup")
     p.set_defaults(func=cmd_doctor)
