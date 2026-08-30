@@ -23,6 +23,24 @@ different one:
 PYTHON=/opt/homebrew/bin/python3 ./mac/install.sh
 ```
 
+## Grant Full Disk Access — required
+
+macOS keeps `~/Library/Mobile Documents` (which is iCloud Drive) behind Full
+Disk Access. Without it the watcher starts, reports itself as running, and
+files nothing at all — there is no error, because the folder simply reads as
+empty.
+
+1. System Settings → Privacy & Security → **Full Disk Access**
+2. Click **+**, press ⌘⇧G, enter `/usr/bin/python3`, add it, switch it on.
+3. Add **Terminal** as well
+   (`/System/Applications/Utilities/Terminal.app`), so running
+   `article-filer` by hand works too.
+4. Restart the watcher:
+   `launchctl kickstart -k gui/$UID/com.articlefiler.watcher`
+
+`install.sh` checks this and tells you if it is missing. Nothing is lost while
+it is: files wait in the inbox until the watcher can read them.
+
 ## Check it
 
 ```bash
@@ -103,10 +121,9 @@ make shortcut && ./shortcut/sign.sh 'build/File Article.shortcut'
 
 ## Troubleshooting
 
-**Nothing gets filed.** Check the log first. The usual cause is Full Disk
-Access: System Settings → Privacy & Security → Full Disk Access, add
-`/usr/bin/python3`. iCloud Drive is protected, and without that permission the
-watcher sees an empty folder.
+**Nothing gets filed.** Almost always Full Disk Access — see the section
+above. `python3 -m articlefiler doctor` now tests this directly and prints the
+fix.
 
 **Files sit in `_Inbox` unfiled.** They are probably iCloud placeholders that
 have not downloaded yet — `ls -la` shows them as hidden `.name.pdf.icloud`

@@ -52,6 +52,23 @@ launchctl enable "gui/$UID/$LABEL"
 echo "==> Checking"
 (cd "$REPO" && "$PYTHON" -m articlefiler doctor) || true
 
+# iCloud Drive is behind Full Disk Access. Without it the watcher runs happily
+# and files nothing, so check now rather than leaving it to be discovered.
+if ! (cd "$REPO" && "$PYTHON" -c '
+import sys
+from articlefiler.access import check_readable
+from articlefiler.config import Config
+problem = check_readable(Config.load().inbox_path)
+sys.exit(1 if problem and "permission denied" in problem else 0)
+'); then
+  echo
+  echo "############################################################"
+  echo "  ACTION NEEDED: grant Full Disk Access before this works"
+  echo "############################################################"
+  (cd "$REPO" && "$PYTHON" -c 'from articlefiler.access import FULL_DISK_ACCESS_HELP; print(FULL_DISK_ACCESS_HELP)')
+  echo
+fi
+
 cat <<EOF
 
 Installed. The watcher now runs at login and files anything dropped into the
@@ -61,6 +78,6 @@ inbox folder.
   log    : tail -f "$LOG"
   remove : $REPO/mac/uninstall.sh
 
-Grant Full Disk Access to $PYTHON in System Settings > Privacy & Security if
-the log shows permission errors reading iCloud Drive.
+If the check above asked for Full Disk Access, do that first — the watcher
+cannot read iCloud Drive without it, and it fails silently.
 EOF

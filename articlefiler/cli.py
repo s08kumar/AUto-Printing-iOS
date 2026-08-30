@@ -9,9 +9,14 @@ from datetime import datetime
 from pathlib import Path
 
 from . import __version__
+from .access import (
+    FULL_DISK_ACCESS_HELP,
+    access_error_message,
+    check_readable,
+)
 from .classify import Signals, classify
 from .config import Config, INBOX_NAME, SUBFOLDER_MODES, config_path, user_publications_path
-from .filer import apply_plan, plan_file, process_inbox
+from .filer import AccessDenied, apply_plan, plan_file, process_inbox
 from .publications import Publication, PublicationRegistry, load_default_registry
 from .watch import Watcher, setup_logging
 
@@ -224,10 +229,25 @@ def cmd_doctor(args) -> int:
           "library is not inside iCloud Drive — it will not sync to your iPhone")
     writable = config.library_path.is_dir() and __import__("os").access(config.library_path, 2)
     check(writable, "library is writable", "library is not writable")
+
+    # Existence is not access: macOS lets you see the folder and still refuses
+    # to list it, which is the single most common reason nothing gets filed.
+    denied = False
+    for label, folder in (("library", config.library_path), ("inbox", config.inbox_path)):
+        problem = check_readable(folder)
+        readable = problem is None or "does not exist" in problem
+        check(readable, f"{label} is readable", f"cannot read the {label}: {problem}")
+        denied = denied or (problem is not None and "permission denied" in problem)
     print(f"  INFO  {len(registry)} publications known")
     print(f"  INFO  Shortcut save path: {config.icloud_relative_library}")
-    pending = len(list(config.inbox_path.glob('*'))) if config.inbox_path.is_dir() else 0
-    print(f"  INFO  {pending} item(s) waiting in the inbox")
+    try:
+        pending = len(list(config.inbox_path.glob("*"))) if config.inbox_path.is_dir() else 0
+        print(f"  INFO  {pending} item(s) waiting in the inbox")
+    except PermissionError:
+        print("  INFO  cannot count the inbox — see below")
+    if denied:
+        print()
+        print(FULL_DISK_ACCESS_HELP)
     return 1 if problems else 0
 
 
@@ -296,6 +316,14 @@ def main(argv: list[str] | None = None) -> int:
         return args.func(args)
     except KeyboardInterrupt:
         return 130
+    except AccessDenied as error:
+        print(access_error_message(Path(str(error).split(": ", 1)[-1]), str(error)),
+              file=sys.stderr)
+        return 2
+    except PermissionError as error:
+        path = Path(getattr(error, "filename", "") or ".")
+        print(access_error_message(path, f"permission denied: {path}"), file=sys.stderr)
+        return 2
     except (ValueError, OSError) as error:
         print(f"article-filer: {error}", file=sys.stderr)
         return 1

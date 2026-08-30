@@ -204,3 +204,48 @@ class ConfigTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PermissionTests(FilerTestCase):
+    """macOS hides iCloud Drive behind Full Disk Access; the failure must be
+    legible rather than a traceback, because it is the usual reason nothing
+    gets filed."""
+
+    def test_an_unreadable_inbox_raises_a_typed_error(self):
+        from unittest.mock import patch
+
+        from articlefiler.filer import AccessDenied, iter_inbox
+
+        with patch.object(Path, "iterdir", side_effect=PermissionError(1, "Operation not permitted")):
+            with self.assertRaises(AccessDenied) as caught:
+                iter_inbox(self.config)
+        self.assertIn("permission denied", str(caught.exception))
+        self.assertIn("_Inbox", str(caught.exception))
+
+    def test_the_watcher_reports_the_problem_only_once(self):
+        from unittest.mock import patch
+
+        from articlefiler.watch import Watcher
+
+        watcher = Watcher(self.config, self.registry)
+        with patch("articlefiler.watch.process_inbox", side_effect=PermissionError("nope")):
+            with patch("articlefiler.watch.log") as log:
+                watcher.tick()
+                first = log.error.call_count
+                watcher.tick()
+                self.assertEqual(log.error.call_count, first, "should not repeat every poll")
+        self.assertGreater(first, 0)
+
+    def test_check_readable_passes_for_a_normal_folder(self):
+        from articlefiler.access import check_readable
+
+        self.assertIsNone(check_readable(self.inbox))
+
+    def test_the_remedy_is_offered_only_for_protected_folders(self):
+        from articlefiler.access import access_error_message, is_protected
+
+        icloud = Path.home() / "Library/Mobile Documents/com~apple~CloudDocs/Articles"
+        self.assertTrue(is_protected(icloud))
+        self.assertFalse(is_protected(Path("/tmp/Articles")))
+        message = access_error_message(Path("/tmp/x"), "permission denied listing: /tmp/x")
+        self.assertNotIn("Full Disk Access", message)

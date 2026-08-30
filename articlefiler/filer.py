@@ -199,12 +199,19 @@ def is_settled(path: Path, settle_seconds: float) -> bool:
     return age >= settle_seconds and stat.st_size > 0
 
 
+class AccessDenied(OSError):
+    """The inbox exists but macOS will not let us read it."""
+
+
 def iter_inbox(config: Config) -> list[Path]:
     """Fileable entries sitting in the inbox, oldest first."""
     inbox = config.inbox_path
     if not inbox.is_dir():
         return []
-    entries = [p for p in inbox.iterdir() if p.is_file()]
+    try:
+        entries = [p for p in inbox.iterdir() if p.is_file()]
+    except PermissionError as error:
+        raise AccessDenied(f"permission denied listing: {inbox}") from error
     entries.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0)
     return entries
 

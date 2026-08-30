@@ -13,7 +13,8 @@ import time
 from pathlib import Path
 
 from .config import Config
-from .filer import Plan, process_inbox
+from .access import FULL_DISK_ACCESS_HELP
+from .filer import AccessDenied, Plan, process_inbox
 from .publications import PublicationRegistry
 
 log = logging.getLogger("article-filer")
@@ -40,6 +41,7 @@ class Watcher:
         self.config = config
         self.registry = registry
         self._running = True
+        self._reported_access_problem = False
 
     def stop(self, *_args) -> None:
         log.info("stopping")
@@ -52,9 +54,19 @@ class Watcher:
     def tick(self) -> list[Plan]:
         try:
             plans = process_inbox(self.config, self.registry)
+        except (AccessDenied, PermissionError) as error:
+            # Logged once: this repeats every poll until a human fixes it, and
+            # a wall of identical tracebacks helps nobody.
+            if not self._reported_access_problem:
+                self._reported_access_problem = True
+                log.error("%s", error)
+                for line in FULL_DISK_ACCESS_HELP.splitlines():
+                    log.error("  %s", line)
+            return []
         except Exception:  # a bad file must never kill the daemon
             log.exception("failed while processing the inbox")
             return []
+        self._reported_access_problem = False
         for plan in plans:
             if plan.action == "move":
                 log.info("filed %s -> %s", plan.source.name, plan.destination.name)
