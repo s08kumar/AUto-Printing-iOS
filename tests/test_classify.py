@@ -239,7 +239,7 @@ class UrlSlugTitleTests(unittest.TestCase):
             self.registry,
         )
         self.assertEqual(decision.filename, "NYT - Nepal Floods.pdf")
-        self.assertTrue(any("recovered from the article URL" in n for n in decision.notes))
+        self.assertTrue(any("headline recovered from" in n for n in decision.notes))
 
     def test_a_real_title_still_wins_over_the_slug(self):
         decision = classify(
@@ -250,3 +250,66 @@ class UrlSlugTitleTests(unittest.TestCase):
         )
         self.assertEqual(decision.filename,
                          "NYT - What to Know About Deadly Flash Floods.pdf")
+
+
+class ArticleUrlSelectionTests(unittest.TestCase):
+    """A rendered news page links to dozens of pieces. Guessing which is "this
+    one" produces a confidently wrong headline — naming an article after its
+    author, in the case that prompted this — which is worse than no headline."""
+
+    def setUp(self):
+        self.registry = PublicationRegistry.bundled()
+        self.uuid = "B3C9BD8F-4EDD-4C20-ACC5-62EC06BD528E"
+
+    def test_a_byline_url_is_not_an_article(self):
+        from articlefiler.classify import _is_article_url
+
+        self.assertFalse(_is_article_url("https://www.nytimes.com/by/lynsey-chutel"))
+
+    def test_section_and_housekeeping_urls_are_not_articles(self):
+        from articlefiler.classify import _is_article_url
+
+        for url in (
+            "https://www.nytimes.com/section/world",
+            "https://www.nytimes.com/newsletters/x",
+            "https://www.nytco.com/careers/early-career/newsroom-fellowship/",
+            "https://www.nytimes.com/",
+        ):
+            self.assertFalse(_is_article_url(url), url)
+
+    def test_a_dated_url_is_an_article(self):
+        from articlefiler.classify import _is_article_url
+
+        self.assertTrue(_is_article_url(
+            "https://www.nytimes.com/2026/08/27/world/asia/nepal-flood-cause.html"))
+
+    def test_several_candidate_articles_yield_no_headline(self):
+        urls = (
+            "https://www.nytimes.com/by/lynsey-chutel",
+            "https://www.nytimes.com/2024/09/29/world/asia/flooding-landslides-nepal.html",
+            "https://www.nytimes.com/2026/08/27/world/asia/nepal-flood-cause.html",
+        )
+        decision = classify(Signals(filename_stem=self.uuid, metadata_urls=urls), self.registry)
+        self.assertEqual(decision.acronym, "NYT")
+        self.assertIn(self.uuid, decision.filename)
+        self.assertTrue(any("do not single out" in n for n in decision.notes))
+
+    def test_a_single_clear_article_does_yield_a_headline(self):
+        urls = (
+            "https://www.nytimes.com/by/lynsey-chutel",
+            "https://www.nytimes.com/",
+            "https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html",
+        )
+        decision = classify(Signals(filename_stem=self.uuid, metadata_urls=urls), self.registry)
+        self.assertEqual(decision.filename, "NYT - Nepal Floods.pdf")
+
+    def test_other_publications_urls_are_ignored(self):
+        from articlefiler.classify import select_article_url
+
+        nyt = self.registry.by_acronym("NYT")
+        chosen = select_article_url(
+            ["https://english.nepalnews.com/s/climate/nepal-scrambles-to-prepare/",
+             "https://www.nytimes.com/2026/08/30/world/asia/nepal-floods.html"],
+            nyt,
+        )
+        self.assertIn("nytimes.com", chosen)

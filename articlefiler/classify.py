@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from typing import Iterable
 from pathlib import Path
 
 from .publications import AGGREGATOR_HOSTS, Publication, PublicationRegistry, normalise_host
@@ -68,6 +69,62 @@ class Decision:
 
 _SLUG_NOISE_RE = re.compile(r"\.(?:html?|php|aspx?|cms|ece)$", re.IGNORECASE)
 _SLUG_ID_RE = re.compile(r"^(?:\d+|[0-9a-f]{8,}|index|amp|story|article)$", re.IGNORECASE)
+
+# Paths that are never the article: bylines, section fronts, tag pages and the
+# publisher's own housekeeping. A byline URL is the commonest link on a page,
+# so frequency ranking picks it first and names the article after its author.
+_NON_ARTICLE_SEGMENT = frozenset(
+    {
+        "by", "author", "authors", "byline", "contributor", "people",
+        "section", "sections", "topic", "topics", "tag", "tags", "category",
+        "subscribe", "subscription", "newsletters", "newsletter", "account",
+        "privacy", "terms", "help", "careers", "jobs", "about", "contact",
+        "search", "podcasts", "video", "videos", "games", "puzzles", "crossword",
+    }
+)
+
+# "/2026/08/30/" — a strong signal that a URL is an article rather than a
+# landing page, across NYT, WaPo, HBR, the Guardian and others.
+_DATED_PATH_RE = re.compile(r"/(?:19|20)\d\d/\d\d?/\d\d?/")
+
+
+def _is_article_url(url: str) -> bool:
+    """True when a URL looks like a specific piece rather than a listing."""
+    tail = url.split("://", 1)[-1]
+    if "/" not in tail:
+        return False
+    path = "/" + tail.split("/", 1)[1].split("?")[0].split("#")[0]
+    segments = [s.lower() for s in path.split("/") if s]
+    if not segments:
+        return False
+    if any(segment in _NON_ARTICLE_SEGMENT for segment in segments):
+        return False
+    return bool(_DATED_PATH_RE.search(path)) or len(segments[-1]) > 24
+
+
+def select_article_url(urls: "Iterable[str]", publication) -> str:
+    """Pick the URL most likely to be *this* article, or "" when unsure.
+
+    A rendered news page links to dozens of other pieces, so being sure is
+    rare. Guessing produces a confidently wrong headline, which is worse than
+    no headline at all — so ambiguity returns nothing and lets the caller fall
+    back.
+    """
+    domains = tuple(publication.domains) if publication is not None else ()
+    candidates = []
+    for url in urls:
+        host = normalise_host(url)
+        if domains and not any(host == d or host.endswith("." + d) for d in domains):
+            continue
+        if _is_article_url(url):
+            candidates.append(url)
+
+    dated = [u for u in candidates if _DATED_PATH_RE.search(u)]
+    pool = dated or candidates
+    if len(pool) != 1:
+        # Zero, or several equally plausible articles: say nothing.
+        return ""
+    return pool[0]
 
 
 def title_from_url(url: str) -> str:
@@ -206,14 +263,18 @@ def classify(
         if candidates:
             title = candidates[0]
         else:
-            # No headline anywhere: the URL slug beats a UUID, and a UUID
-            # beats nothing at all.
-            for url in signals.candidate_urls():
-                title = title_from_url(url)
-                if title:
-                    notes.append("headline recovered from the article URL")
-                    break
-            title = title or signals.filename_stem
+            # No headline anywhere. A URL slug will do, but only when one
+            # URL is unambiguously the article.
+            chosen = select_article_url(signals.candidate_urls(), publication)
+            title = title_from_url(chosen) if chosen else ""
+            if title:
+                notes.append(f"headline recovered from {chosen}")
+            else:
+                notes.append(
+                    "no headline found: the PDF has no title, and its links do "
+                    "not single out one article"
+                )
+                title = signals.filename_stem
 
     # Strip the publication's own name even when the URL identified it.
     if publication is not None and title:
