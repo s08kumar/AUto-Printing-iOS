@@ -53,7 +53,7 @@ class RenamingTests(FilerTestCase):
         plan = self.file_one(source)
         self.assertEqual(plan.action, "move")
         self.assertFalse(source.exists())
-        self.assertTrue((self.library / "TE - Why the grid needs storage.pdf").is_file())
+        self.assertTrue((self.library / "Economist - Why the grid needs storage.pdf").is_file())
 
     def test_uses_the_pdf_title_over_a_meaningless_filename(self):
         source = self.drop("Untitled.pdf", pdf_with_title("Fed holds rates - WSJ"))

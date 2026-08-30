@@ -133,7 +133,8 @@ def classify(
     notes: list[str] = []
 
     # 1. A file we have already filed keeps its identity.
-    existing = split_prefixed(strip_copy_suffix(signals.filename_stem))
+    existing = split_prefixed(strip_copy_suffix(signals.filename_stem),
+                              registry.acronyms())
     existing_pub = registry.by_acronym(existing[0]) if existing else None
 
     # 2. The URL is the strongest signal.

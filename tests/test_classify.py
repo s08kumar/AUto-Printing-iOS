@@ -46,9 +46,17 @@ class ClassifyTests(unittest.TestCase):
 
     def test_title_suffix_identifies_the_publication(self):
         decision = self.decide(filename_stem="Why the grid needs storage - The Economist")
-        self.assertEqual(decision.acronym, "TE")
+        self.assertEqual(decision.acronym, "Economist")
         self.assertEqual(decision.source, "title-suffix")
-        self.assertEqual(decision.filename, "TE - Why the grid needs storage.pdf")
+        self.assertEqual(decision.filename, "Economist - Why the grid needs storage.pdf")
+
+    def test_a_word_prefix_survives_a_second_pass(self):
+        """Satish files as "Economist - ...", so mixed-case prefixes must be
+        recognised as already-filed rather than re-processed."""
+        decision = self.decide(filename_stem="Economist - Grid storage")
+        self.assertEqual(decision.acronym, "Economist")
+        self.assertEqual(decision.source, "existing-prefix")
+        self.assertEqual(decision.filename, "Economist - Grid storage.pdf")
 
     def test_apple_news_link_falls_through_to_the_title(self):
         decision = self.decide(
@@ -61,7 +69,7 @@ class ClassifyTests(unittest.TestCase):
         decision = self.decide(
             url="https://www.mckinsey.com/x", title="Reimagining efficiency | McKinsey"
         )
-        self.assertEqual(decision.filename, "MCK - Reimagining efficiency.pdf")
+        self.assertEqual(decision.filename, "McKinsey - Reimagining efficiency.pdf")
 
     # -- unknown publications -------------------------------------------
 

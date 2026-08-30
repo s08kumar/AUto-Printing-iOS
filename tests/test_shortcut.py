@@ -126,7 +126,7 @@ class ShortcutStructureTests(unittest.TestCase):
         items = exact["WFWorkflowActionParameters"]["WFItems"]["Value"]["WFDictionaryFieldValueItems"]
         mapping = {i["WFKey"]["Value"]["string"]: i["WFValue"]["Value"]["string"] for i in items}
         self.assertEqual(mapping["wsj.com"], "WSJ")
-        self.assertEqual(mapping["economist.com"], "TE")
+        self.assertEqual(mapping["economist.com"], "Economist")
 
 
 class LookupTableTests(unittest.TestCase):
@@ -136,7 +136,7 @@ class LookupTableTests(unittest.TestCase):
     def test_publisher_names_map_to_acronyms(self):
         mapping = publisher_name_map(self.registry)
         self.assertEqual(mapping["Financial Times"], "FT")
-        self.assertEqual(mapping["The Economist"], "TE")
+        self.assertEqual(mapping["The Economist"], "Economist")
 
     def test_the_publisher_pattern_captures_the_paper_from_a_headline(self):
         import re

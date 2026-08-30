@@ -86,7 +86,7 @@ class TitleSuffixTests(unittest.TestCase):
 
     def test_strips_em_dash_suffix(self):
         pub, title = self.registry.match_title("Grid storage — The Economist")
-        self.assertEqual(pub.acronym, "TE")
+        self.assertEqual(pub.acronym, "Economist")
         self.assertEqual(title, "Grid storage")
 
     def test_longest_suffix_wins(self):

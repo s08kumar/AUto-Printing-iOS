@@ -109,17 +109,24 @@ class BuildFilenameTests(unittest.TestCase):
 
 
 class PrefixTests(unittest.TestCase):
-    def test_splits_a_prefixed_name(self):
-        self.assertEqual(split_prefixed("WSJ - Markets wobble"), ("WSJ", "Markets wobble"))
+    KNOWN = ["WSJ", "NYT", "Economist", "McKinsey", "FT"]
 
-    def test_ignores_a_lowercase_prefix(self):
-        self.assertIsNone(split_prefixed("wsj - markets"))
+    def test_splits_a_prefixed_name(self):
+        self.assertEqual(split_prefixed("WSJ - Markets wobble", self.KNOWN),
+                         ("WSJ", "Markets wobble"))
+
+    def test_splits_a_word_prefix(self):
+        self.assertEqual(split_prefixed("Economist - Grid storage", self.KNOWN),
+                         ("Economist", "Grid storage"))
+
+    def test_prefix_match_is_case_insensitive(self):
+        self.assertEqual(split_prefixed("wsj - markets", self.KNOWN), ("wsj", "markets"))
 
     def test_ignores_a_plain_headline_with_a_dash(self):
-        self.assertIsNone(split_prefixed("Markets wobble - a note"))
+        self.assertIsNone(split_prefixed("Markets wobble - a note", self.KNOWN))
 
-    def test_ignores_an_over_long_prefix(self):
-        self.assertIsNone(split_prefixed("VERYLONGACRONYM - Markets"))
+    def test_ignores_an_unknown_prefix(self):
+        self.assertIsNone(split_prefixed("VERYLONGACRONYM - Markets", self.KNOWN))
 
     def test_strips_a_macos_copy_suffix(self):
         self.assertEqual(strip_copy_suffix("NYT - Markets (2)"), "NYT - Markets")

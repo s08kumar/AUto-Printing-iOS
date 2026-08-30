@@ -5,6 +5,7 @@ from __future__ import annotations
 import html
 import re
 import unicodedata
+from typing import Iterable
 
 # Illegal or hostile in a filename on APFS, iCloud Drive, SMB and Windows.
 _ILLEGAL = r'/\\:*?"<>|\x00-\x1f\x7f'
@@ -111,17 +112,28 @@ def build_filename(
     return stem + ext
 
 
-_ALREADY_PREFIXED_RE = re.compile(r"^([A-Z][A-Z0-9&]{1,7})\s+-\s+(\S.*)$")
+_PREFIX_RE = re.compile(r"^(\S{1,20})\s+-\s+(\S.*)$")
 
 
-def split_prefixed(stem: str) -> tuple[str, str] | None:
-    """Split "NYT - Headline" into ("NYT", "Headline"), else None.
+def split_prefixed(stem: str, known: "Iterable[str]") -> tuple[str, str] | None:
+    """Split "NYT - Headline" into ("NYT", "Headline") when the prefix is one
+    of `known`, else None.
 
-    >>> split_prefixed("WSJ - Markets wobble")
+    Checked against the known prefixes rather than by shape, so that word
+    prefixes such as "Economist" work and ordinary headlines that happen to
+    contain " - " do not look like one.
+
+    >>> split_prefixed("WSJ - Markets wobble", ["WSJ", "NYT"])
     ('WSJ', 'Markets wobble')
-    >>> split_prefixed("Markets wobble - a note")
+    >>> split_prefixed("Economist - Grid storage", ["Economist"])
+    ('Economist', 'Grid storage')
+    >>> split_prefixed("Markets wobble - a note", ["WSJ"])
     """
-    match = _ALREADY_PREFIXED_RE.match(stem.strip())
+    match = _PREFIX_RE.match(stem.strip())
     if not match:
         return None
-    return match.group(1), match.group(2).strip()
+    prefix = match.group(1)
+    lookup = {str(k).casefold() for k in known}
+    if prefix.casefold() not in lookup:
+        return None
+    return prefix, match.group(2).strip()
